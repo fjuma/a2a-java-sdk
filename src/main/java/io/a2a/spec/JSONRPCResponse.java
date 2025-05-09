@@ -1,11 +1,12 @@
 package io.a2a.spec;
 
+import static io.a2a.spec.A2A.JSONRPC_VERSION;
+import static io.a2a.util.Utils.defaultIfNull;
+
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import io.a2a.util.Assert;
 
 /**
  * Represents a JSONRPC response.
@@ -24,8 +25,7 @@ public sealed class JSONRPCResponse implements JSONRPCMessage permits SendTaskRe
     }
 
     public JSONRPCResponse(String jsonrpc, Object id, Object result, JSONRPCError error) {
-        Assert.checkNotNullParam("jsonrpc", jsonrpc);
-        this.jsonrpc = jsonrpc;
+        this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;
         this.error = error;

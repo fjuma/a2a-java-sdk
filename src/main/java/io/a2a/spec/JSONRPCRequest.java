@@ -1,5 +1,8 @@
 package io.a2a.spec;
 
+import static io.a2a.spec.A2A.JSONRPC_VERSION;
+import static io.a2a.util.Utils.defaultIfNull;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,9 +29,8 @@ public sealed class JSONRPCRequest implements JSONRPCMessage permits SendTaskReq
     }
 
     public JSONRPCRequest(String jsonrpc, Object id, String method, Map<String, Object> params) {
-        Assert.checkNotNullParam("jsonrpc", jsonrpc);
         Assert.checkNotNullParam("method", method);
-        this.jsonrpc = jsonrpc;
+        this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;
         this.params = params;
