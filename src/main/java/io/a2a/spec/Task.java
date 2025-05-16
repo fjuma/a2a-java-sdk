@@ -20,7 +20,7 @@ public class Task implements EventType, StreamingEventType {
 
     public static final TypeReference<Task> TYPE_REFERENCE = new TypeReference<>() {};
 
-    static final String TASK = "task";
+    public static final String TASK = "task";
     private final String id;
     private final String contextId;
     private final TaskStatus status;

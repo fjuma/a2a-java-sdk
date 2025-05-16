@@ -11,6 +11,11 @@ import java.util.Collections;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+
 /**
  * Constants and utility methods related to the A2A protocol.
  */
@@ -95,7 +100,7 @@ public class A2A {
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
     public static AgentCard getAgentCard(String agentUrl) throws A2AServerException {
-        return getAgentCard(HttpClient.newHttpClient(), agentUrl);
+        return getAgentCard(new OkHttpClient(), agentUrl);
     }
 
     /**
@@ -106,20 +111,20 @@ public class A2A {
      * @return the agent card
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
-    public static AgentCard getAgentCard(HttpClient httpClient, String agentUrl) throws A2AServerException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .header("Content-Type", "application/json")
-                .uri(URI.create(getRequestEndpoint(agentUrl, AGENT_CARD_REQUEST)))
-                .GET()
+    public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl) throws A2AServerException {
+        Request request = new Request.Builder()
+                .url(getRequestEndpoint(agentUrl, AGENT_CARD_REQUEST))
+                .addHeader("Content-Type", "application/json")
+                .get()
                 .build();
 
-        try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                throw new A2AServerException("Failed to obtain agent card: " + response.statusCode());
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (! response.isSuccessful()) {
+                throw new A2AServerException("Failed to obtain agent card: " + response.code());
             }
-            return unmarshalFrom(response.body(), AGENT_CARD_TYPE_REFERENCE);
-        } catch (IOException | InterruptedException e) {
+            String responseBody = response.body().string();
+            return unmarshalFrom(responseBody, AGENT_CARD_TYPE_REFERENCE);
+        } catch (IOException e) {
             throw new A2AServerException("Failed to obtain agent card", e);
         }
     }

@@ -16,22 +16,24 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
 
-    static final String ARTIFACT_UPDATE = "artifact-update";
+    public static final String ARTIFACT_UPDATE = "artifact-update";
     private final String taskId;
     private final Boolean append;
+    private final Boolean lastChunk;
     private final Artifact artifact;
     private final String contextId;
     private final Map<String, Object> metadata;
     private final String type;
 
-    public TaskArtifactUpdateEvent(String taskId, Artifact artifact, String contextId, Boolean append, Map<String, Object> metadata) {
-        this(taskId, artifact, contextId, append, metadata, ARTIFACT_UPDATE);
+    public TaskArtifactUpdateEvent(String taskId, Artifact artifact, String contextId, Boolean append, Boolean lastChunk, Map<String, Object> metadata) {
+        this(taskId, artifact, contextId, append, lastChunk, metadata, ARTIFACT_UPDATE);
     }
 
     @JsonCreator
     public TaskArtifactUpdateEvent(@JsonProperty("taskId") String taskId, @JsonProperty("artifact") Artifact artifact,
                                    @JsonProperty("contextId") String contextId,
                                    @JsonProperty("append") Boolean append,
+                                   @JsonProperty("lastChunk") Boolean lastChunk,
                                    @JsonProperty("metadata") Map<String, Object> metadata,
                                    @JsonProperty("type") String type) {
         Assert.checkNotNullParam("taskId", taskId);
@@ -41,6 +43,7 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
         this.artifact = artifact;
         this.contextId = contextId;
         this.append = append;
+        this.lastChunk = lastChunk;
         this.metadata = metadata;
         this.type = type;
     }
@@ -57,8 +60,12 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
         return contextId;
     }
 
-    public Boolean getAppend() {
+    public Boolean isAppend() {
         return append;
+    }
+
+    public Boolean isLastChunk() {
+        return lastChunk;
     }
 
     public Map<String, Object> getMetadata() {
@@ -76,6 +83,7 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
         private Artifact artifact;
         private String contextId;
         private Boolean append;
+        private Boolean lastChunk;
         private Map<String, Object> metadata;
         private String type;
 
@@ -99,6 +107,12 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
             return this;
         }
 
+        public Builder lastChunk(Boolean lastChunk) {
+            this.lastChunk  = lastChunk;
+            return this;
+        }
+
+
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
             return this;
@@ -110,7 +124,7 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
         }
 
         public TaskArtifactUpdateEvent build() {
-            return new TaskArtifactUpdateEvent(taskId, artifact, contextId, append, metadata);
+            return new TaskArtifactUpdateEvent(taskId, artifact, contextId, append, lastChunk, metadata);
         }
     }
 }

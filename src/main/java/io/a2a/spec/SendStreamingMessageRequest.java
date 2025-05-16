@@ -34,4 +34,35 @@ public final class SendStreamingMessageRequest extends JSONRPCRequest<MessageSen
         this.method = method;
         this.params = params;
     }
+
+    public static class Builder {
+        private String jsonrpc;
+        private Object id;
+        private String method;
+        private MessageSendParams params;
+
+        public Builder jsonrpc(String jsonrpc) {
+            this.jsonrpc = jsonrpc;
+            return this;
+        }
+
+        public Builder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public Builder params(MessageSendParams params) {
+            this.params = params;
+            return this;
+        }
+
+        public SendStreamingMessageRequest build() {
+            return new SendStreamingMessageRequest(jsonrpc, id, method, params);
+        }
+    }
 }

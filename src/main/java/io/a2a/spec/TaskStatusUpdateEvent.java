@@ -16,7 +16,7 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
 
-    static final String STATUS_UPDATE = "status-update";
+    public static final String STATUS_UPDATE = "status-update";
     private final String taskId;
     private final TaskStatus status;
     private final String contextId;
@@ -57,6 +57,7 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         return contextId;
     }
 
+    @JsonProperty("final")
     public boolean isFinal() {
         return isFinal;
     }
@@ -109,7 +110,7 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         }
 
         public TaskStatusUpdateEvent build() {
-            return new TaskStatusUpdateEvent(taskId, status, contextId, isFinal, metadata, type);
+            return new TaskStatusUpdateEvent(taskId, status, contextId, isFinal, metadata);
         }
     }
 }

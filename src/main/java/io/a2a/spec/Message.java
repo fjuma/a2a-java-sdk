@@ -19,7 +19,7 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Message implements EventType, StreamingEventType {
 
-    static final String MESSAGE = "message";
+    public static final String MESSAGE = "message";
     private final Role role;
     private final List<Part<?>> parts;
     private final String messageId;

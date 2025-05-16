@@ -77,7 +77,7 @@ public class TaskManager {
 
         Artifact newArtifact = event.getArtifact();
         String artifactId = newArtifact.artifactId();
-        boolean appendParts = event.getAppend() != null && event.getAppend();
+        boolean appendParts = event.isAppend() != null && event.isAppend();
 
         Artifact existingArtifact = null;
         int existingArtifactIndex = -1;

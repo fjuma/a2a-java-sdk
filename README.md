@@ -82,6 +82,29 @@ PushNotificationConfig pushNotificationConfig = new PushNotificationConfig.Build
 SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("task-1234", pushNotificationConfig);
 ```
 
+#### Send a streaming message
+
+```java
+// Send a text message to the remote agent
+Message message = A2A.toUserMessage("tell me some jokes"); // the message ID will be automatically generated for you
+MessageSendParams params = new MessageSendParams.Builder()
+        .id("task-1234") // id is optional
+        .message(message)
+        .build();
+
+// Create a handler that will be invoked for Task, Message, TaskStatusUpdateEvent, and TaskArtifactUpdateEvent
+Consumer<StreamingEventType> eventHandler = event -> {...};
+
+// Create a handler that will be invoked if an error is received
+Consumer<JSONRPCError> errorHandler = error -> {...};
+
+// Create a handler that will be invoked in the event of a failure
+Runnable failureHandler = () -> {...};
+
+// Send the streaming message to the remote agent
+client.sendStreamingMessage(params, eventHandler, errorHandler, failureHandler);
+```
+
 #### Retrieve details about the server agent that this client agent is communicating with
 ```java
 AgentCard serverAgentCard = client.getAgentCard();

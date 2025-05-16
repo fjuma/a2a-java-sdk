@@ -165,7 +165,7 @@ public class A2AClientTest {
         assertInstanceOf(Message.class, result);
         Message agentMessage = (Message) result;
         assertEquals(Message.Role.AGENT, agentMessage.getRole());
-        Part part = agentMessage.getParts().get(0);
+        Part<?> part = agentMessage.getParts().get(0);
         assertEquals(Part.Type.TEXT, part.getType());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
         assertEquals("msg-456", agentMessage.getMessageId());
