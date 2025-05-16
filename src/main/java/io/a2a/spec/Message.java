@@ -23,8 +23,8 @@ public class Message implements EventType, StreamingEventType {
     private final Role role;
     private final List<Part<?>> parts;
     private final String messageId;
-    private final String contextId;
-    private final String taskId;
+    private String contextId;
+    private String taskId;
     private final Map<String, Object> metadata;
     private final String type;
 
@@ -70,6 +70,14 @@ public class Message implements EventType, StreamingEventType {
 
     public Map<String, Object> getMetadata() {
         return metadata;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public void setContextId(String contextId) {
+        this.contextId = contextId;
     }
 
     @Override
