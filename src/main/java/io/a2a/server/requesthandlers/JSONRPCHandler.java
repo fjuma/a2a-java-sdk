@@ -26,11 +26,15 @@ import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskResubscriptionRequest;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+@ApplicationScoped
 public class JSONRPCHandler {
     private final AgentCard agentCard;
     private final RequestHandler requestHandler;
 
+    @Inject
     public JSONRPCHandler(AgentCard agentCard, RequestHandler requestHandler) {
         this.agentCard = agentCard;
         this.requestHandler = requestHandler;
@@ -110,5 +114,9 @@ public class JSONRPCHandler {
             return new GetTaskResponse(request.getId(), e);
         }
         return null;
+    }
+
+    public AgentCard getAgentCard() {
+        return agentCard;
     }
 }

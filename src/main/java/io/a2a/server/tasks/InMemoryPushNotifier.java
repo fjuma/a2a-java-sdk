@@ -6,7 +6,9 @@ import java.util.Map;
 
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.Task;
+import jakarta.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class InMemoryPushNotifier implements PushNotifier {
     // TODO this also has some kind of httpx client
 

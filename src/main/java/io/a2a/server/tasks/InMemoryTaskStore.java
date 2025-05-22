@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.a2a.spec.Task;
+import jakarta.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class InMemoryTaskStore implements TaskStore {
 
     private final Map<String, Task> tasks = Collections.synchronizedMap(new HashMap<>());

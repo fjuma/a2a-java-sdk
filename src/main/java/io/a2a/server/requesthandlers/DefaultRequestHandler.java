@@ -34,7 +34,9 @@ import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
+import jakarta.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class DefaultRequestHandler implements RequestHandler {
 
     private final AgentExecutor agentExecutor;

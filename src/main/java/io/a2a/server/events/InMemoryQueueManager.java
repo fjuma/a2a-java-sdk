@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class InMemoryQueueManager implements QueueManager {
 
 
