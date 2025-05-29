@@ -34,6 +34,16 @@ public class A2AServerResource {
     @Inject
     JSONRPCHandler jsonRpcHandler;
 
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
+    public Response handleRequests(JSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
+        if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
+            return processStreamingRequest(request, sseEventSink, sse);
+        }
+        return processNonStreamingRequest(request);
+    }
+
     /**
      * Handles incoming POST requests to the main A2A endpoint. Dispatches the
      * request to the appropriate JSON-RPC handler method and returns the response.
@@ -41,7 +51,7 @@ public class A2AServerResource {
      * @param request the JSON-RPC request
      * @return the JSON-RPC response which may be an error response
      */
-    @POST
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response handleNonStreamingRequests(JSONRPCRequest<?> request) {
@@ -50,13 +60,13 @@ public class A2AServerResource {
             return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
         }
         return processNonStreamingRequest(request);
-    }
+    }*/
 
     /**
      * Handles incoming POST requests to the main A2A endpoint that involve Server-Sent Events (SSE).
      * Dispatches the request to the appropriate JSON-RPC handler method and returns the response.
      */
-    @POST
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public Response handleStreamingRequests(JSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
@@ -65,7 +75,7 @@ public class A2AServerResource {
             return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
         }
         return processStreamingRequest(request, sseEventSink, sse);
-    }
+    }*/
 
     /**
      * Handles incoming GET requests to the agent card endpoint.
