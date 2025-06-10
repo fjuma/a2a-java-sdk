@@ -18,6 +18,8 @@ import java.util.function.Consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.client.sse.SSEEventListener;
+import io.a2a.http.A2AHttpClient;
+import io.a2a.http.JdkA2AHttpClient;
 import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
@@ -58,7 +60,8 @@ public class A2AClient {
     private static final TypeReference<GetTaskPushNotificationConfigResponse> GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<SetTaskPushNotificationConfigResponse> SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
-    private final OkHttpClient httpClient;
+    private final OkHttpClient okHttpClient;
+    private final A2AHttpClient httpClient = new JdkA2AHttpClient();
     private final String agentUrl;
     private AgentCard agentCard;
 
@@ -72,7 +75,7 @@ public class A2AClient {
         checkNotNullParam("agentCard", agentCard);
         this.agentCard = agentCard;
         this.agentUrl = agentCard.url();
-        this.httpClient = new OkHttpClient();
+        this.okHttpClient = new OkHttpClient();
     }
 
     /**
@@ -83,7 +86,7 @@ public class A2AClient {
     public A2AClient(String agentUrl) {
         checkNotNullParam("agentUrl", agentUrl);
         this.agentUrl = agentUrl;
-        this.httpClient = new OkHttpClient();
+        this.okHttpClient = new OkHttpClient();
     }
 
     /**
@@ -95,7 +98,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard() throws A2AServerException {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl);
+            this.agentCard = A2A.getAgentCard(this.okHttpClient, this.agentUrl);
         }
         return this.agentCard;
     }
@@ -110,7 +113,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard(String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl, relativeCardPath, authHeaders);
+            this.agentCard = A2A.getAgentCard(this.okHttpClient, this.agentUrl, relativeCardPath, authHeaders);
         }
         return this.agentCard;
     }
@@ -396,7 +399,7 @@ public class A2AClient {
                 .failureHandler(failureHandler)
                 .build();
         try {
-            EventSources.createFactory(httpClient)
+            EventSources.createFactory(okHttpClient)
                     .newEventSource(createPostRequest(sendStreamingMessageRequest,
                             true), sseEventListener);
         } catch (IOException e) {
@@ -411,7 +414,7 @@ public class A2AClient {
 
     private String sendPostRequest(Object value, boolean addEventStreamHeader) throws IOException, InterruptedException{
         Request okRequest = createPostRequest(value, addEventStreamHeader);
-        try (Response response = httpClient.newCall(okRequest).execute()) {
+        try (Response response = okHttpClient.newCall(okRequest).execute()) {
             if (! response.isSuccessful()) {
                 throw new IOException("Request failed " + response.code());
             }
