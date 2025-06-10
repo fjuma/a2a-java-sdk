@@ -8,11 +8,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpClientResponse;
+import io.a2a.http.A2AHttpResponse;
 import io.a2a.http.JdkA2AHttpClient;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 
 /**
@@ -158,7 +155,7 @@ public class A2A {
         }
 
         try {
-            A2AHttpClientResponse response = builder.get();
+            A2AHttpResponse response = builder.get();
             if (!response.success()) {
                 throw new A2AServerException("Failed to obtain agent card: " + response.status());
             }

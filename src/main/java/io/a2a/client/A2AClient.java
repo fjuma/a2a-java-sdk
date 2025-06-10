@@ -13,13 +13,15 @@ import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.a2a.client.sse.SSEEventListener;
+import io.a2a.client.sse.SSEHandler;
 import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpClientResponse;
+import io.a2a.http.A2AHttpResponse;
 import io.a2a.http.JdkA2AHttpClient;
 import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
@@ -47,7 +49,6 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.sse.EventSources;
 
 /**
  * An A2A client.
@@ -357,20 +358,6 @@ public class A2AClient {
     /**
      * Send a streaming message to the remote agent.
      *
-     * @param messageSendParams the parameters for the message to be sent
-     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
-     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
-     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
-     * @throws A2AServerException if sending the streaming message fails for any reason
-     */
-    public void okSendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
-                                       Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
-        okSendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
-    }
-
-    /**
-     * Send a streaming message to the remote agent.
-     *
      * @param requestId the request ID to use
      * @param messageSendParams the parameters for the message to be sent
      * @param eventHandler a consumer that will be invoked for each event received from the remote agent
@@ -378,7 +365,7 @@ public class A2AClient {
      * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
-    public void okSendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
+    public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
                                        Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         checkNotNullParam("messageSendParams", messageSendParams);
         checkNotNullParam("eventHandler", eventHandler);
@@ -394,36 +381,28 @@ public class A2AClient {
             sendStreamingMessageRequestBuilder.id(requestId);
         }
 
+        AtomicReference<CompletableFuture<Void>> ref = new AtomicReference<>();
+        SSEHandler sseHandler = new SSEHandler(eventHandler, errorHandler, failureHandler);
         SendStreamingMessageRequest sendStreamingMessageRequest = sendStreamingMessageRequestBuilder.build();
-        SSEEventListener sseEventListener = new SSEEventListener.Builder()
-                .eventHandler(eventHandler)
-                .errorHandler(errorHandler)
-                .failureHandler(failureHandler)
-                .build();
         try {
-            EventSources.createFactory(okHttpClient)
-                    .newEventSource(createOkPostRequest(sendStreamingMessageRequest,
-                            true), sseEventListener);
+            A2AHttpClient.PostBuilder builder = createPostBuilder(sendStreamingMessageRequest);
+            ref.set(builder.postAsyncSSE(
+                    msg -> sseHandler.onMessage(msg, ref.get()),
+                    throwable -> sseHandler.onError(throwable, ref.get()),
+                    () -> {
+                        // We don't need to do anything special on completion
+                    }));
+
         } catch (IOException e) {
             throw new A2AServerException("Failed to send streaming message request: " + e);
+        } catch (InterruptedException e) {
+            throw new A2AServerException("Send streaming message request timed out: " + e);
         }
     }
-
-    private Request createOkPostRequest(Object value, boolean addEventStreamHeader) throws IOException {
-        Request.Builder builder = new Request.Builder()
-                .url(agentUrl)
-                .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(OBJECT_MAPPER.writeValueAsString(value), JSON_MEDIA_TYPE));
-        if (addEventStreamHeader) {
-            builder.addHeader("Accept", "text/event-stream");
-        }
-        return builder.build();
-    }
-
 
     private String sendPostRequest(Object value) throws IOException, InterruptedException {
         A2AHttpClient.PostBuilder builder = createPostBuilder(value);
-        A2AHttpClientResponse response = builder.post();
+        A2AHttpResponse response = builder.post();
         if (!response.success()) {
             throw new IOException("Request failed " + response.status());
         }

@@ -128,7 +128,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         }
 
         @Override
-        public A2AHttpClientResponse get() throws IOException, InterruptedException {
+        public A2AHttpResponse get() throws IOException, InterruptedException {
             HttpRequest request = createRequestBuilder(false)
                     .build();
             HttpResponse<String> response =
@@ -166,7 +166,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         }
 
         @Override
-        public A2AHttpClientResponse post() throws IOException, InterruptedException {
+        public A2AHttpResponse post() throws IOException, InterruptedException {
             HttpRequest request = createRequestBuilder(false)
                     .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                     .build();
@@ -186,7 +186,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         }
     }
 
-    private record JdkHttpResponse(HttpResponse<String> response) implements A2AHttpClientResponse {
+    private record JdkHttpResponse(HttpResponse<String> response) implements A2AHttpResponse {
 
         @Override
         public int status() {

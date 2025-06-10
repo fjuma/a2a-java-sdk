@@ -16,7 +16,7 @@ public interface A2AHttpClient {
     }
 
     interface GetBuilder extends Builder<GetBuilder> {
-        A2AHttpClientResponse get() throws IOException, InterruptedException;
+        A2AHttpResponse get() throws IOException, InterruptedException;
         CompletableFuture<Void> getAsyncSSE(
                 Consumer<String> messageConsumer,
                 Consumer<Throwable> errorConsumer,
@@ -25,7 +25,7 @@ public interface A2AHttpClient {
 
     interface PostBuilder extends Builder<PostBuilder> {
         PostBuilder body(String body);
-        A2AHttpClientResponse post() throws IOException, InterruptedException;
+        A2AHttpResponse post() throws IOException, InterruptedException;
         CompletableFuture<Void> postAsyncSSE(
                 Consumer<String> messageConsumer,
                 Consumer<Throwable> errorConsumer,
