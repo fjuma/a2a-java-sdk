@@ -98,7 +98,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard() throws A2AServerException {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.okHttpClient, this.agentUrl);
+            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl);
         }
         return this.agentCard;
     }
@@ -113,7 +113,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard(String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.okHttpClient, this.agentUrl, relativeCardPath, authHeaders);
+            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl, relativeCardPath, authHeaders);
         }
         return this.agentCard;
     }

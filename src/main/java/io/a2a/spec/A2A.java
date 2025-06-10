@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.a2a.http.A2AHttpClient;
+import io.a2a.http.A2AHttpClientResponse;
+import io.a2a.http.JdkA2AHttpClient;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -96,7 +99,7 @@ public class A2A {
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
     public static AgentCard getAgentCard(String agentUrl) throws A2AServerException {
-        return getAgentCard(new OkHttpClient(), agentUrl);
+        return getAgentCard(new JdkA2AHttpClient(), agentUrl);
     }
 
     /**
@@ -107,7 +110,7 @@ public class A2A {
      * @return the agent card
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
-    public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl) throws A2AServerException {
+    public static AgentCard getAgentCard(A2AHttpClient httpClient, String agentUrl) throws A2AServerException {
         return getAgentCard(httpClient, agentUrl, null, null);
     }
 
@@ -122,7 +125,7 @@ public class A2A {
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
     public static AgentCard getAgentCard(String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
-        return getAgentCard(new OkHttpClient(), agentUrl, relativeCardPath, authHeaders);
+        return getAgentCard(new JdkA2AHttpClient(), agentUrl, relativeCardPath, authHeaders);
     }
 
     /**
@@ -136,7 +139,7 @@ public class A2A {
      * @return the agent card
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
-    public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
+    public static AgentCard getAgentCard(A2AHttpClient httpClient, String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
         if (relativeCardPath == null || relativeCardPath.isEmpty()) {
             relativeCardPath = AGENT_CARD_REQUEST;
         } else {
@@ -144,27 +147,27 @@ public class A2A {
                 relativeCardPath = relativeCardPath.substring(1);
             }
         }
-        Request.Builder requestBuilder = new Request.Builder()
+        A2AHttpClient.GetBuilder builder = httpClient.createGet()
                 .url(getRequestEndpoint(agentUrl, relativeCardPath))
-                .addHeader("Content-Type", "application/json")
-                .get();
+                .addHeader("Content-Type", "application/json");
 
         if (authHeaders != null) {
             for (Map.Entry<String, String> entry : authHeaders.entrySet()) {
-                requestBuilder.addHeader(entry.getKey(), entry.getValue());
+                builder.addHeader(entry.getKey(), entry.getValue());
             }
         }
 
-        Request request = requestBuilder.build();
-
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (! response.isSuccessful()) {
-                throw new A2AServerException("Failed to obtain agent card: " + response.code());
+        try {
+            A2AHttpClientResponse response = builder.get();
+            if (!response.success()) {
+                throw new A2AServerException("Failed to obtain agent card: " + response.status());
             }
-            String responseBody = response.body().string();
-            return unmarshalFrom(responseBody, AGENT_CARD_TYPE_REFERENCE);
+            String body = response.body();
+            return unmarshalFrom(body, AGENT_CARD_TYPE_REFERENCE);
         } catch (IOException e) {
             throw new A2AServerException("Failed to obtain agent card", e);
+        } catch (InterruptedException e) {
+            throw new A2AServerException("Timed out obtaining agent card", e);
         }
     }
 
