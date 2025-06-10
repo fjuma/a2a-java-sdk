@@ -54,6 +54,21 @@ public class JsonStreamingMessages {
                   }
             }""";
 
+    public static final String STREAMING_STATUS_UPDATE_EVENT_FINAL = """
+            data: {
+                  "jsonrpc": "2.0",
+                  "id": "1234",
+                  "result": {
+                    "taskId": "1",
+                    "contextId": "2",
+                    "status": {
+                        "state": "completed"
+                    },
+                    "final": true,
+                    "kind": "status-update"
+                  }
+            }""";
+
     public static final String STREAMING_ARTIFACT_UPDATE_EVENT = """
              data: {
                   "jsonrpc": "2.0",

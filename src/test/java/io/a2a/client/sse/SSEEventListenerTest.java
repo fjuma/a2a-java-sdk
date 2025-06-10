@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,8 +21,10 @@ import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskState;
+import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 public class SSEEventListenerTest {
@@ -39,7 +43,7 @@ public class SSEEventListenerTest {
                 JsonStreamingMessages.STREAMING_TASK_EVENT.indexOf("{"));
         
         // Call the onEvent method directly
-        listener.onEvent(null, "event-id", "message", eventData);
+        listener.onMessage(eventData, null);
 
         // Verify the event was processed correctly
         assertNotNull(receivedEvent.get());
@@ -64,7 +68,7 @@ public class SSEEventListenerTest {
                 JsonStreamingMessages.STREAMING_MESSAGE_EVENT.indexOf("{"));
         
         // Call onEvent method
-        listener.onEvent(null, "event-id", "message", eventData);
+        listener.onMessage(eventData, null);
 
         // Verify the event was processed correctly
         assertNotNull(receivedEvent.get());
@@ -92,7 +96,7 @@ public class SSEEventListenerTest {
                 JsonStreamingMessages.STREAMING_STATUS_UPDATE_EVENT.indexOf("{"));
 
         // Call onEvent method
-        listener.onEvent(null, "event-id", "message", eventData);
+        listener.onMessage(eventData, null);
 
         // Verify the event was processed correctly
         assertNotNull(receivedEvent.get());
@@ -118,7 +122,7 @@ public class SSEEventListenerTest {
                 JsonStreamingMessages.STREAMING_ARTIFACT_UPDATE_EVENT.indexOf("{"));
 
         // Call onEvent method
-        listener.onEvent(null, "event-id", "message", eventData);
+        listener.onMessage(eventData, null);
 
         // Verify the event was processed correctly
         assertNotNull(receivedEvent.get());
@@ -150,7 +154,7 @@ public class SSEEventListenerTest {
                 JsonStreamingMessages.STREAMING_ERROR_EVENT.indexOf("{"));
         
         // Call onEvent method
-        listener.onEvent(null, "event-id", "message", eventData);
+        listener.onMessage(eventData, null);
 
         // Verify the error was processed correctly
         assertNotNull(receivedError.get());
@@ -168,26 +172,94 @@ public class SSEEventListenerTest {
                 () -> failureHandlerCalled.set(true));
 
         // Simulate a failure
-        listener.onFailure(null, new RuntimeException("Test exception"), null);
+        CancelCapturingFuture future = new CancelCapturingFuture();
+        listener.onError(new RuntimeException("Test exception"), future);
 
         // Verify the failure handler was called
         assertTrue(failureHandlerCalled.get());
+        // Verify it got cancelled
+        assertTrue(future.cancelHandlerCalled);
     }
 
     @Test
-    public void testBuilderPattern() {
-        List<StreamingEventKind> receivedEvents = new ArrayList<>();
-        List<JSONRPCError> receivedErrors = new ArrayList<>();
-        AtomicBoolean failureHandlerCalled = new AtomicBoolean(false);
-
-        SSEEventListener listener = new SSEEventListener.Builder()
-                .logEvents(true)
-                .eventHandler(receivedEvents::add)
-                .errorHandler(receivedErrors::add)
-                .failureHandler(() -> failureHandlerCalled.set(true))
+    public void testFinalTaskStatusUpdateEventCancels() {
+        TaskStatusUpdateEvent tsue = new TaskStatusUpdateEvent.Builder()
+                .taskId("1234")
+                .contextId("xyz")
+                .status(new TaskStatus(TaskState.COMPLETED))
+                .isFinal(true)
                 .build();
 
-        // Verify listener is created with the correct properties
-        assertNotNull(listener);
+        // Set up event handler
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
+        SSEEventListener listener = new SSEEventListener(
+                event -> receivedEvent.set(event),
+                error -> {},
+                () -> {});
+
+
     }
-} 
+
+    @Test
+    public void testOnEventWithFinalTaskStatusUpdateEventEventCancels() throws Exception {
+        // Set up event handler
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
+        SSEEventListener listener = new SSEEventListener(
+                event -> receivedEvent.set(event),
+                error -> {},
+                () -> {});
+
+        // Parse the message event JSON
+        String eventData = JsonStreamingMessages.STREAMING_STATUS_UPDATE_EVENT_FINAL.substring(
+                JsonStreamingMessages.STREAMING_STATUS_UPDATE_EVENT_FINAL.indexOf("{"));
+
+        // Call onEvent method
+        CancelCapturingFuture future = new CancelCapturingFuture();
+        listener.onMessage(eventData, future);
+
+        // Verify the event was processed correctly
+        assertNotNull(receivedEvent.get());
+        assertTrue(receivedEvent.get() instanceof TaskStatusUpdateEvent);
+        TaskStatusUpdateEvent taskStatusUpdateEvent = (TaskStatusUpdateEvent) receivedEvent.get();
+        assertEquals("1", taskStatusUpdateEvent.getTaskId());
+        assertEquals("2", taskStatusUpdateEvent.getContextId());
+        assertTrue(taskStatusUpdateEvent.isFinal());
+        assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
+
+        assertTrue(future.cancelHandlerCalled);
+    }
+
+
+    private static class CancelCapturingFuture implements Future<Void> {
+        private boolean cancelHandlerCalled;
+
+        public CancelCapturingFuture() {
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            cancelHandlerCalled = true;
+            return true;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return false;
+        }
+
+        @Override
+        public Void get() throws InterruptedException, ExecutionException {
+            return null;
+        }
+
+        @Override
+        public Void get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
+        }
+    }
+}

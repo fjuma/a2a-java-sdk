@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.a2a.client.sse.SSEHandler;
+import io.a2a.client.sse.SSEEventListener;
 import io.a2a.http.A2AHttpClient;
 import io.a2a.http.A2AHttpResponse;
 import io.a2a.http.JdkA2AHttpClient;
@@ -47,8 +47,6 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 /**
  * An A2A client.
@@ -382,13 +380,13 @@ public class A2AClient {
         }
 
         AtomicReference<CompletableFuture<Void>> ref = new AtomicReference<>();
-        SSEHandler sseHandler = new SSEHandler(eventHandler, errorHandler, failureHandler);
+        SSEEventListener sseEventListener = new SSEEventListener(eventHandler, errorHandler, failureHandler);
         SendStreamingMessageRequest sendStreamingMessageRequest = sendStreamingMessageRequestBuilder.build();
         try {
             A2AHttpClient.PostBuilder builder = createPostBuilder(sendStreamingMessageRequest);
             ref.set(builder.postAsyncSSE(
-                    msg -> sseHandler.onMessage(msg, ref.get()),
-                    throwable -> sseHandler.onError(throwable, ref.get()),
+                    msg -> sseEventListener.onMessage(msg, ref.get()),
+                    throwable -> sseEventListener.onError(throwable, ref.get()),
                     () -> {
                         // We don't need to do anything special on completion
                     }));
