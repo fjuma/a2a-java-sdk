@@ -363,9 +363,9 @@ public class A2AClient {
      * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
-    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
-                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
-        sendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
+    public void okSendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
+                                       Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        okSendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
     }
 
     /**
@@ -378,8 +378,8 @@ public class A2AClient {
      * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
-    public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
-                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+    public void okSendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
+                                       Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         checkNotNullParam("messageSendParams", messageSendParams);
         checkNotNullParam("eventHandler", eventHandler);
         checkNotNullParam("errorHandler", errorHandler);

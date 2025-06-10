@@ -110,7 +110,7 @@ public class A2AClientStreamingTest {
         };
         Consumer<JSONRPCError> errorHandler = error -> {};
         Runnable failureHandler = () -> {};
-        client.sendStreamingMessage("request-1234", params, eventHandler, errorHandler, failureHandler);
+        client.okSendStreamingMessage("request-1234", params, eventHandler, errorHandler, failureHandler);
 
         boolean eventReceived = latch.await(10, TimeUnit.SECONDS);
         assertTrue(eventReceived);
