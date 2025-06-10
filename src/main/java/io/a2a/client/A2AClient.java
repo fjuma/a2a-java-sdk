@@ -61,7 +61,7 @@ public class A2AClient {
     private static final TypeReference<SetTaskPushNotificationConfigResponse> SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
     private final OkHttpClient okHttpClient;
-    private final A2AHttpClient httpClient = new JdkA2AHttpClient();
+    private final A2AHttpClient httpClient;
     private final String agentUrl;
     private AgentCard agentCard;
 
@@ -76,6 +76,7 @@ public class A2AClient {
         this.agentCard = agentCard;
         this.agentUrl = agentCard.url();
         this.okHttpClient = new OkHttpClient();
+        this.httpClient = new JdkA2AHttpClient();
     }
 
     /**
@@ -87,6 +88,7 @@ public class A2AClient {
         checkNotNullParam("agentUrl", agentUrl);
         this.agentUrl = agentUrl;
         this.okHttpClient = new OkHttpClient();
+        this.httpClient = new JdkA2AHttpClient();
     }
 
     /**
@@ -150,7 +152,7 @@ public class A2AClient {
         SendMessageRequest sendMessageRequest = sendMessageRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(sendMessageRequest);
+            String httpResponseBody = sendOkPostRequest(sendMessageRequest);
             return unmarshalResponse(httpResponseBody, SEND_MESSAGE_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to send message: " + e);
@@ -202,7 +204,7 @@ public class A2AClient {
         GetTaskRequest getTaskRequest = getTaskRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(getTaskRequest);
+            String httpResponseBody = sendOkPostRequest(getTaskRequest);
             return unmarshalResponse(httpResponseBody, GET_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to get task: " + e);
@@ -252,7 +254,7 @@ public class A2AClient {
         CancelTaskRequest cancelTaskRequest = cancelTaskRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(cancelTaskRequest);
+            String httpResponseBody = sendOkPostRequest(cancelTaskRequest);
             return unmarshalResponse(httpResponseBody, CANCEL_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to cancel task: " + e);
@@ -302,7 +304,7 @@ public class A2AClient {
         GetTaskPushNotificationConfigRequest getTaskPushNotificationRequest = getTaskPushNotificationRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(getTaskPushNotificationRequest);
+            String httpResponseBody = sendOkPostRequest(getTaskPushNotificationRequest);
             return unmarshalResponse(httpResponseBody, GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to get task push notification config: " + e);
@@ -345,7 +347,7 @@ public class A2AClient {
         SetTaskPushNotificationConfigRequest setTaskPushNotificationRequest = setTaskPushNotificationRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(setTaskPushNotificationRequest);
+            String httpResponseBody = sendOkPostRequest(setTaskPushNotificationRequest);
             return unmarshalResponse(httpResponseBody, SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to set task push notification config: " + e);
@@ -400,20 +402,20 @@ public class A2AClient {
                 .build();
         try {
             EventSources.createFactory(okHttpClient)
-                    .newEventSource(createPostRequest(sendStreamingMessageRequest,
+                    .newEventSource(createOkPostRequest(sendStreamingMessageRequest,
                             true), sseEventListener);
         } catch (IOException e) {
             throw new A2AServerException("Failed to send streaming message request: " + e);
         }
     }
 
-    private String sendPostRequest(Object value) throws IOException, InterruptedException{
-        return sendPostRequest(value, false);
+    private String sendOkPostRequest(Object value) throws IOException, InterruptedException{
+        return sendOkPostRequest(value, false);
     }
 
 
-    private String sendPostRequest(Object value, boolean addEventStreamHeader) throws IOException, InterruptedException{
-        Request okRequest = createPostRequest(value, addEventStreamHeader);
+    private String sendOkPostRequest(Object value, boolean addEventStreamHeader) throws IOException, InterruptedException{
+        Request okRequest = createOkPostRequest(value, addEventStreamHeader);
         try (Response response = okHttpClient.newCall(okRequest).execute()) {
             if (! response.isSuccessful()) {
                 throw new IOException("Request failed " + response.code());
@@ -423,11 +425,11 @@ public class A2AClient {
 
     }
 
-    private Request createPostRequest(Object value) throws IOException {
-        return createPostRequest(value, false);
+    private Request createOkPostRequest(Object value) throws IOException {
+        return createOkPostRequest(value, false);
     }
 
-    private Request createPostRequest(Object value, boolean addEventStreamHeader) throws IOException {
+    private Request createOkPostRequest(Object value, boolean addEventStreamHeader) throws IOException {
         Request.Builder builder = new Request.Builder()
                 .url(agentUrl)
                 .addHeader("Content-Type", "application/json")
