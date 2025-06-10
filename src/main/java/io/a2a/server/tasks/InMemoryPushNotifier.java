@@ -7,17 +7,17 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.a2a.http.A2AHttpClient;
+import io.a2a.http.TempA2AHttpClient;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.Task;
 
 @ApplicationScoped
 public class InMemoryPushNotifier implements PushNotifier {
-    private final A2AHttpClient httpClient;
+    private final TempA2AHttpClient httpClient;
     private final Map<String, PushNotificationConfig> pushNotificationInfos = Collections.synchronizedMap(new HashMap<>());
 
     @Inject
-    public InMemoryPushNotifier(A2AHttpClient httpClient) {
+    public InMemoryPushNotifier(TempA2AHttpClient httpClient) {
         this.httpClient = httpClient;
     }
 

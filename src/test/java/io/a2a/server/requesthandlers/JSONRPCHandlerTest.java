@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.enterprise.context.Dependent;
 
-import io.a2a.http.A2AHttpClient;
+import io.a2a.http.TempA2AHttpClient;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.Event;
@@ -1260,7 +1260,7 @@ public class JSONRPCHandlerTest {
     }
 
     @Dependent
-    private static class TestHttpClient implements A2AHttpClient {
+    private static class TestHttpClient implements TempA2AHttpClient {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
 
