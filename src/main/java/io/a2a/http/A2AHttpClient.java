@@ -1,6 +1,8 @@
 package io.a2a.http;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public interface A2AHttpClient {
 
@@ -15,10 +17,18 @@ public interface A2AHttpClient {
 
     interface GetBuilder extends Builder<GetBuilder> {
         A2AHttpClientResponse get() throws IOException, InterruptedException;
+        CompletableFuture<Void> getAsyncSSE(
+                Consumer<String> messageConsumer,
+                Consumer<Throwable> errorConsumer,
+                Runnable completeRunnable) throws IOException, InterruptedException;
     }
 
     interface PostBuilder extends Builder<PostBuilder> {
         PostBuilder body(String body);
         A2AHttpClientResponse post() throws IOException, InterruptedException;
+        CompletableFuture<Void> postAsyncSSE(
+                Consumer<String> messageConsumer,
+                Consumer<Throwable> errorConsumer,
+                Runnable completeRunnable) throws IOException, InterruptedException;
     }
 }

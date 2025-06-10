@@ -5,9 +5,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.function.Consumer;
 
 public class JdkA2AHttpClient implements A2AHttpClient {
 
@@ -30,9 +35,9 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         return new JdkPostBuilder();
     }
 
-    private static abstract class JdkBuilder<T extends Builder<T>> implements Builder<T> {
-        protected String url;
-        protected Map<String, String> headers = new HashMap<>();
+    private abstract class JdkBuilder<T extends Builder<T>> implements Builder<T> {
+        private String url;
+        private Map<String, String> headers = new HashMap<>();
 
         @Override
         public T url(String url) {
@@ -59,17 +64,86 @@ public class JdkA2AHttpClient implements A2AHttpClient {
             }
             return builder;
         }
+
+        protected CompletableFuture<Void> asyncRequest(
+                HttpRequest request,
+                Consumer<String> messageConsumer,
+                Consumer<Throwable> errorConsumer,
+                Runnable completeRunnable
+        ) {
+            Flow.Subscriber<String> subscriber = new Flow.Subscriber<String>() {
+                private Flow.Subscription subscription;
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    this.subscription = subscription;
+                    subscription.request(1);
+                }
+
+                @Override
+                public void onNext(String item) {
+                    // SSE messages sometimes start with "data:". Strip that off
+                    if (item != null && item.startsWith("data:")) {
+                        item = item.substring(5).trim();
+                        if (!item.isEmpty()) {
+                            messageConsumer.accept(item);
+                        }
+                    }
+                    subscription.request(1);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    errorConsumer.accept(throwable);
+                    subscription.cancel();
+                }
+
+                @Override
+                public void onComplete() {
+                    completeRunnable.run();
+                    subscription.cancel();
+                }
+            };
+
+            BodyHandler<Void> bodyHandler = BodyHandlers.fromLineSubscriber(subscriber);
+
+            // Send the response async, and let the subscriber handle the lines.
+            return httpClient.sendAsync(request, bodyHandler)
+                    .thenAccept(response -> {
+                        if (!JdkHttpResponse.success(response)) {
+                            subscriber.onError(new IOException("Request failed " + response.statusCode()));
+                        }
+                    });
+        }
     }
 
     private class JdkGetBuilder extends JdkBuilder<GetBuilder> implements A2AHttpClient.GetBuilder {
+
+        private HttpRequest.Builder createRequestBuilder(boolean SSE) throws IOException {
+            HttpRequest.Builder builder = super.createRequestBuilder().GET();
+            if (SSE) {
+                builder.header("Accept", "text/event-stream");
+            }
+            return builder;
+        }
+
         @Override
         public A2AHttpClientResponse get() throws IOException, InterruptedException {
-            HttpRequest request = createRequestBuilder()
-                    .GET()
+            HttpRequest request = createRequestBuilder(false)
                     .build();
             HttpResponse<String> response =
-                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                    httpClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
             return new JdkHttpResponse(response);
+        }
+
+        @Override
+        public CompletableFuture<Void> getAsyncSSE(
+                Consumer<String> messageConsumer,
+                Consumer<Throwable> errorConsumer,
+                Runnable completeRunnable) throws IOException, InterruptedException {
+            HttpRequest request = createRequestBuilder(false)
+                    .build();
+            return super.asyncRequest(request, messageConsumer, errorConsumer, completeRunnable);
         }
     }
 
@@ -82,14 +156,33 @@ public class JdkA2AHttpClient implements A2AHttpClient {
             return self();
         }
 
+        private HttpRequest.Builder createRequestBuilder(boolean SSE) throws IOException {
+            HttpRequest.Builder builder = super.createRequestBuilder()
+                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
+            if (SSE) {
+                builder.header("Accept", "text/event-stream");
+            }
+            return builder;
+        }
+
         @Override
         public A2AHttpClientResponse post() throws IOException, InterruptedException {
-            HttpRequest request = createRequestBuilder()
+            HttpRequest request = createRequestBuilder(false)
                     .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                     .build();
             HttpResponse<String> response =
-                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                    httpClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
             return new JdkHttpResponse(response);
+        }
+
+        @Override
+        public CompletableFuture<Void> postAsyncSSE(
+                Consumer<String> messageConsumer,
+                Consumer<Throwable> errorConsumer,
+                Runnable completeRunnable) throws IOException, InterruptedException {
+            HttpRequest request = createRequestBuilder(false)
+                    .build();
+            return super.asyncRequest(request, messageConsumer, errorConsumer, completeRunnable);
         }
     }
 
@@ -102,6 +195,10 @@ public class JdkA2AHttpClient implements A2AHttpClient {
 
         @Override
         public boolean success() {// Send the request and get the response
+            return success(response);
+        }
+
+        static boolean success(HttpResponse<?> response) {
             return response.statusCode() >= 200 && response.statusCode() < 300;
         }
 

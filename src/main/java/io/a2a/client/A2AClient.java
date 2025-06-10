@@ -422,17 +422,7 @@ public class A2AClient {
 
 
     private String sendPostRequest(Object value) throws IOException, InterruptedException {
-        return sendPostRequest(value, false);
-    }
-
-    private String sendPostRequest(Object value, boolean streaming) throws IOException, InterruptedException {
-        A2AHttpClient.PostBuilder builder = httpClient.createPost()
-                .url(agentUrl)
-                .addHeader("Content-Type", "application/json")
-                .body(OBJECT_MAPPER.writeValueAsString(value));
-        if (streaming) {
-            builder.addHeader("Accept", "text/event-stream");
-        }
+        A2AHttpClient.PostBuilder builder = createPostBuilder(value);
         A2AHttpClientResponse response = builder.post();
         if (!response.success()) {
             throw new IOException("Request failed " + response.status());
@@ -440,6 +430,13 @@ public class A2AClient {
         return response.body();
     }
 
+    private A2AHttpClient.PostBuilder createPostBuilder(Object value) throws JsonProcessingException {
+        return httpClient.createPost()
+                .url(agentUrl)
+                .addHeader("Content-Type", "application/json")
+                .body(OBJECT_MAPPER.writeValueAsString(value));
+
+    }
 
     private <T extends JSONRPCResponse> T unmarshalResponse(String response, TypeReference<T> typeReference)
             throws A2AServerException, JsonProcessingException {
