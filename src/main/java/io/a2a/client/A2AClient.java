@@ -45,8 +45,6 @@ import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
 
 /**
  * An A2A client.
@@ -58,8 +56,6 @@ public class A2AClient {
     private static final TypeReference<CancelTaskResponse> CANCEL_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<GetTaskPushNotificationConfigResponse> GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<SetTaskPushNotificationConfigResponse> SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
-    private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
-    private final OkHttpClient okHttpClient;
     private final A2AHttpClient httpClient;
     private final String agentUrl;
     private AgentCard agentCard;
@@ -74,7 +70,6 @@ public class A2AClient {
         checkNotNullParam("agentCard", agentCard);
         this.agentCard = agentCard;
         this.agentUrl = agentCard.url();
-        this.okHttpClient = new OkHttpClient();
         this.httpClient = new JdkA2AHttpClient();
     }
 
@@ -86,7 +81,6 @@ public class A2AClient {
     public A2AClient(String agentUrl) {
         checkNotNullParam("agentUrl", agentUrl);
         this.agentUrl = agentUrl;
-        this.okHttpClient = new OkHttpClient();
         this.httpClient = new JdkA2AHttpClient();
     }
 
