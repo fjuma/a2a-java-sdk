@@ -8,18 +8,22 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import jakarta.enterprise.context.Dependent;
 
-import io.a2a.http.TempA2AHttpClient;
+import io.a2a.http.A2AHttpClient;
+import io.a2a.http.A2AHttpResponse;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.Event;
@@ -65,6 +69,7 @@ import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
+import io.a2a.util.Utils;
 import mutiny.zero.ZeroPublisher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -698,7 +703,7 @@ public class JSONRPCHandlerTest {
 
                 @Override
                 public void onNext(SendStreamingMessageResponse item) {
-                    // System.out.println("-> " + item.getResult());
+                    System.out.println("-> " + item.getResult());
                     results.add(item.getResult());
                     System.out.println(results);
                     subscriptionRef.get().request(1);
@@ -1260,18 +1265,67 @@ public class JSONRPCHandlerTest {
     }
 
     @Dependent
-    private static class TestHttpClient implements TempA2AHttpClient {
+    private static class TestHttpClient implements A2AHttpClient {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
 
         @Override
-        public int post(String url, Task task) {
-            // System.out.println("----> adding " + task);
-            tasks.add(task);
-            if (latch != null) {
-                latch.countDown();
+        public GetBuilder createGet() {
+            return null;
+        }
+
+        @Override
+        public PostBuilder createPost() {
+            return new TestPostBuilder();
+        }
+
+        class TestPostBuilder implements A2AHttpClient.PostBuilder {
+            private volatile String body;
+            @Override
+            public PostBuilder body(String body) {
+                this.body = body;
+                return this;
             }
-            return 200;
+
+            @Override
+            public A2AHttpResponse post() throws IOException, InterruptedException {
+                tasks.add(Utils.OBJECT_MAPPER.readValue(body, Task.TYPE_REFERENCE));
+                try {
+                    return new A2AHttpResponse() {
+                        @Override
+                        public int status() {
+                            return 200;
+                        }
+
+                        @Override
+                        public boolean success() {
+                            return true;
+                        }
+
+                        @Override
+                        public String body() {
+                            return "";
+                        }
+                    };
+                } finally {
+                    latch.countDown();
+                }
+            }
+
+            @Override
+            public CompletableFuture<Void> postAsyncSSE(Consumer<String> messageConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
+                return null;
+            }
+
+            @Override
+            public PostBuilder url(String s) {
+                return this;
+            }
+
+            @Override
+            public PostBuilder addHeader(String name, String value) {
+                return this;
+            }
         }
     }
 }
