@@ -35,6 +35,7 @@ import io.a2a.server.tasks.InMemoryTaskStore;
 import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskStore;
+import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
@@ -166,11 +167,8 @@ public class JSONRPCHandlerTest {
             // Looking at the Python implementation, they typically use AgentExecutors that
             // don't support cancellation. So my theory is the Agent updates the task to the CANCEL status
             Task task = context.getTask();
-            Task updated = new Task.Builder(task)
-                    .status(new TaskStatus(TaskState.CANCELED))
-                    .build();
-
-            eventQueue.enqueueEvent(updated);
+            TaskUpdater taskUpdater = new TaskUpdater(eventQueue, context);
+            taskUpdater.cancel();
         };
 
         CancelTaskRequest request = new CancelTaskRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));

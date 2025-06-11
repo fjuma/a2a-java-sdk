@@ -6,6 +6,7 @@ import jakarta.enterprise.inject.Produces;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
+import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskState;
@@ -29,12 +30,8 @@ public class AgentExecutorProducer {
             @Override
             public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
                 if (context.getTask().getId().equals("cancel-task-123")) {
-                    Task task = context.getTask();
-                    Task updated = new Task.Builder(task)
-                            .status(new TaskStatus(TaskState.CANCELED))
-                            .build();
-
-                    eventQueue.enqueueEvent(updated);
+                    TaskUpdater taskUpdater = new TaskUpdater(eventQueue, context);
+                    taskUpdater.cancel();
                 } else if (context.getTask().getId().equals("cancel-task-not-supported-123")) {
                     throw new UnsupportedOperationError();
                 }
