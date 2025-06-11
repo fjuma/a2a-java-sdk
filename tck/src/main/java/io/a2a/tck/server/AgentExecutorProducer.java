@@ -81,69 +81,6 @@ public class AgentExecutorProducer {
         }
 
         /**
-         * This method runs completely in the background.
-         * The main execute() method has already returned.
-         */
-        private void executeTaskInBackground(RequestContext context, EventQueue eventQueue) {
-            String taskId = context.getTaskId();
-            
-            try {
-                System.out.println("====> background execution started for task: " + taskId);
-                
-                // Perform the actual work
-                Object result = performActualWork(context);
-                
-                // Task completed successfully
-                eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
-                        .taskId(taskId)
-                        .contextId(context.getContextId())
-                        .status(new TaskStatus(TaskState.COMPLETED))
-                        .isFinal(true)
-                        .build());
-                
-                System.out.println("====> background task completed successfully: " + taskId);
-                
-            } catch (InterruptedException e) {
-                // Task was interrupted (cancelled)
-                System.out.println("====> background task was interrupted: " + taskId);
-                Thread.currentThread().interrupt();
-                
-            } catch (Exception e) {
-                // Task failed
-                System.err.println("====> background task failed: " + taskId);
-                e.printStackTrace();
-                
-            } finally {
-                // Always clean up
-                System.out.println("====> background task cleanup completed: " + taskId);
-            }
-        }
-
-        /**
-         * This method represents the actual work that needs to be done.
-         * Replace this with your real business logic.
-         */
-        private Object performActualWork(RequestContext context) throws InterruptedException {
-            
-            
-            System.out.println("====> starting actual work for task: " + context.getTaskId());
-            
-            // Simulate work that can be interrupted
-            for (int i = 0; i < 10; i++) {
-                // Check for interruption regularly during long-running work
-                if (Thread.currentThread().isInterrupted()) {
-                    throw new InterruptedException("Task was cancelled during execution");
-                }
-                
-                Thread.sleep(200); // Simulate work chunks
-                System.out.println("====> work progress for task " + context.getTaskId() + ": " + ((i + 1) * 10) + "%");
-            }
-            
-            System.out.println("====> finished actual work for task: " + context.getTaskId());
-            return "Task completed successfully";
-        }
-
-        /**
          * Cleanup method for proper resource management
          */
         @PreDestroy
