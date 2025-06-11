@@ -71,6 +71,7 @@ import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
+import io.quarkus.arc.profile.IfBuildProfile;
 import mutiny.zero.ZeroPublisher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1263,6 +1264,7 @@ public class JSONRPCHandlerTest {
     }
 
     @Dependent
+    @IfBuildProfile("test")
     private static class TestHttpClient implements A2AHttpClient {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
