@@ -167,7 +167,7 @@ public class JSONRPCHandlerTest {
             // Looking at the Python implementation, they typically use AgentExecutors that
             // don't support cancellation. So my theory is the Agent updates the task to the CANCEL status
             Task task = context.getTask();
-            TaskUpdater taskUpdater = new TaskUpdater(eventQueue, context);
+            TaskUpdater taskUpdater = new TaskUpdater(context, eventQueue);
             taskUpdater.cancel();
         };
 

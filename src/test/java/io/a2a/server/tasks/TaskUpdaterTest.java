@@ -47,7 +47,7 @@ public class TaskUpdaterTest {
                 .setTaskId(TEST_TASK_ID)
                 .setContextId(TEST_TASK_CONTEXT_ID)
                 .build();
-        taskUpdater = new TaskUpdater(eventQueue, context);
+        taskUpdater = new TaskUpdater(context, eventQueue);
     }
 
     @Test

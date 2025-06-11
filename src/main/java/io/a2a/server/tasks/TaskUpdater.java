@@ -19,7 +19,7 @@ public class TaskUpdater {
     private final String taskId;
     private final String contextId;
 
-    public TaskUpdater(EventQueue eventQueue, RequestContext context) {
+    public TaskUpdater(RequestContext context, EventQueue eventQueue) {
         this.eventQueue = eventQueue;
         this.taskId = context.getTaskId();
         this.contextId = context.getContextId();
