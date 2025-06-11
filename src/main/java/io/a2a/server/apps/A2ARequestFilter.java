@@ -13,21 +13,29 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
 
+import io.smallrye.mutiny.Uni;
+
+import org.jboss.resteasy.reactive.server.ServerRequestFilter;
+
 @Provider
 @PreMatching
-public class A2ARequestFilter implements ContainerRequestFilter {
+public class A2ARequestFilter {
 
-    @Override
-    public void filter(ContainerRequestContext requestContext) {
-        if (requestContext.getMethod().equals("POST") && requestContext.hasEntity()) {
+    @ServerRequestFilter
+    public Uni<Void> filterRequest(ContainerRequestContext requestContext) {
+        if (! requestContext.getMethod().equals("POST") || ! requestContext.hasEntity()) {
+            return Uni.createFrom().nullItem();
+        }
+
+        return Uni.createFrom().item(() -> {
             try (InputStream entityInputStream = requestContext.getEntityStream()) {
                 byte[] requestBodyBytes = entityInputStream.readAllBytes();
                 String requestBody = new String(requestBodyBytes);
+
                 // ensure the request is treated as a streaming request or a non-streaming request
                 // based on the method in the request body
                 if (isStreamingRequest(requestBody)) {
@@ -35,12 +43,14 @@ public class A2ARequestFilter implements ContainerRequestFilter {
                 } else if (isNonStreamingRequest(requestBody)) {
                     putAcceptHeader(requestContext, MediaType.APPLICATION_JSON);
                 }
-                // reset the entity stream
+
+                // Reset the entity stream for further processing
                 requestContext.setEntityStream(new ByteArrayInputStream(requestBodyBytes));
-            } catch(IOException e){
+            } catch (IOException e) {
                 throw new RuntimeException("Unable to read the request body");
             }
-        }
+            return null;
+        });
     }
 
     private static boolean isStreamingRequest(String requestBody) {
