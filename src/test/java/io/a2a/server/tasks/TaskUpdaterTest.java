@@ -20,9 +20,7 @@ import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 public class TaskUpdaterTest {
     public static final String TEST_TASK_ID = "test-task-id";
@@ -128,14 +126,26 @@ public class TaskUpdaterTest {
 
     @Test
     public void testFailedWithoutMessage() throws Exception {
-        taskUpdater.failed();
+        taskUpdater.fail();
         checkTaskStatusUpdateEventOnQueue(true, TaskState.FAILED, null);
     }
 
     @Test
     public void testFailedWithMessage() throws Exception {
-        taskUpdater.failed(SAMPLE_MESSAGE);
+        taskUpdater.fail(SAMPLE_MESSAGE);
         checkTaskStatusUpdateEventOnQueue(true, TaskState.FAILED, SAMPLE_MESSAGE);
+    }
+
+    @Test
+    public void testCanceledWithoutMessage() throws Exception {
+        taskUpdater.cancel();
+        checkTaskStatusUpdateEventOnQueue(true, TaskState.CANCELED, null);
+    }
+
+    @Test
+    public void testCanceledWithMessage() throws Exception {
+        taskUpdater.cancel(SAMPLE_MESSAGE);
+        checkTaskStatusUpdateEventOnQueue(true, TaskState.CANCELED, SAMPLE_MESSAGE);
     }
 
     @Test

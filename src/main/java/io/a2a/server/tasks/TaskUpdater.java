@@ -70,11 +70,11 @@ public class TaskUpdater {
         updateStatus(TaskState.COMPLETED, message, true);
     }
 
-    public void failed() {
-        failed(null);
+    public void fail() {
+        fail(null);
     }
 
-    public void failed(Message message) {
+    public void fail(Message message) {
         updateStatus(TaskState.FAILED, message, true);
     }
 
@@ -94,6 +94,13 @@ public class TaskUpdater {
         updateStatus(TaskState.WORKING, message);
     }
 
+    public void cancel() {
+        cancel(null);
+    }
+
+    public void cancel(Message message) {
+        updateStatus(TaskState.CANCELED, message, true);
+    }
 
     public Message newAgentMessage(List<Part<?>> parts, Map<String, Object> metadata) {
         return new Message.Builder()

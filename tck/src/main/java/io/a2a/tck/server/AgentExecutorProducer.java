@@ -7,6 +7,7 @@ import jakarta.enterprise.inject.Produces;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
+import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotCancelableError;
@@ -42,22 +43,12 @@ public class AgentExecutorProducer {
                 eventQueue.enqueueEvent(task);
             }
 
+            TaskUpdater updater = new TaskUpdater(eventQueue, context.getTaskId(), context.getTaskId());
+
             // Immediately set to WORKING state
-            eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
-                    .taskId(context.getTaskId())
-                    .contextId(context.getContextId())
-                    .status(new TaskStatus(TaskState.WORKING))
-                    .build());
-            
+            updater.startWork();
             System.out.println("====> task set to WORKING, starting background execution");
 
-//            // Fire and forget - start the task but don't wait for it
-//            CompletableFuture<Void> taskFuture = CompletableFuture
-//                .runAsync(() -> executeTaskInBackground(context, eventQueue), taskExecutor);
-            
-//            // Store the future for potential cancellation
-//            runningTasks.put(context.getTaskId(), taskFuture);
-            
             // Method returns immediately - task continues in background
             System.out.println("====> execute() method returning immediately, task running in background");
         }
@@ -66,12 +57,7 @@ public class AgentExecutorProducer {
         public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
             System.out.println("====> task cancel request received");
             Task task = context.getTask();
-            
-            if (task == null) {
-                System.out.println("====> task not found");
-                throw new TaskNotFoundError();
-            }
-            
+
             if (task.getStatus().state() == TaskState.CANCELED) {
                 System.out.println("====> task already canceled");
                 throw new TaskNotCancelableError();
@@ -82,6 +68,8 @@ public class AgentExecutorProducer {
                 throw new TaskNotCancelableError();
             }
 
+            TaskUpdater updater = new TaskUpdater(eventQueue, context.getTaskId(), context.getTaskId());
+            updater.cancel();
             eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
                     .taskId(task.getId())
                     .contextId(task.getContextId())
