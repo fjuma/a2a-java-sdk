@@ -8,12 +8,11 @@ import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
 import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.JSONRPCError;
-import io.a2a.spec.Task;
-import io.a2a.spec.TaskState;
-import io.a2a.spec.TaskStatus;
 import io.a2a.spec.UnsupportedOperationError;
+import io.quarkus.arc.profile.IfBuildProfile;
 
 @ApplicationScoped
+@IfBuildProfile("test")
 public class AgentExecutorProducer {
 
     @Produces

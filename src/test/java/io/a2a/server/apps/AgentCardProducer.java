@@ -9,8 +9,10 @@ import jakarta.enterprise.inject.Produces;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.PublicAgentCard;
+import io.quarkus.arc.profile.IfBuildProfile;
 
 @ApplicationScoped
+@IfBuildProfile("test")
 public class AgentCardProducer {
 
     @Produces
