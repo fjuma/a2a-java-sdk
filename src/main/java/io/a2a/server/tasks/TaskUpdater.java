@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
@@ -18,10 +19,10 @@ public class TaskUpdater {
     private final String taskId;
     private final String contextId;
 
-    public TaskUpdater(EventQueue eventQueue, String taskId, String contextId) {
+    public TaskUpdater(EventQueue eventQueue, RequestContext context) {
         this.eventQueue = eventQueue;
-        this.taskId = taskId;
-        this.contextId = contextId;
+        this.taskId = context.getTaskId();
+        this.contextId = context.getContextId();
     }
 
     public void updateStatus(TaskState taskState) {

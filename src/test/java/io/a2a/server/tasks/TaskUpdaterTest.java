@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Map;
 
+import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventQueue;
 import io.a2a.spec.Message;
@@ -43,7 +44,11 @@ public class TaskUpdaterTest {
     @BeforeEach
     public void init() {
         eventQueue = EventQueue.create();
-        taskUpdater = new TaskUpdater(eventQueue, TEST_TASK_ID, TEST_TASK_CONTEXT_ID);
+        RequestContext context = new RequestContext.Builder()
+                .setTaskId(TEST_TASK_ID)
+                .setContextId(TEST_TASK_CONTEXT_ID)
+                .build();
+        taskUpdater = new TaskUpdater(eventQueue, context);
     }
 
     //@Test

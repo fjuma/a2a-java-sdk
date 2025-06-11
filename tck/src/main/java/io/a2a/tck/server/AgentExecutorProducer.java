@@ -43,7 +43,7 @@ public class AgentExecutorProducer {
                 eventQueue.enqueueEvent(task);
             }
 
-            TaskUpdater updater = new TaskUpdater(eventQueue, context.getTaskId(), context.getTaskId());
+            TaskUpdater updater = new TaskUpdater(eventQueue, context);
 
             // Immediately set to WORKING state
             updater.startWork();
@@ -68,7 +68,7 @@ public class AgentExecutorProducer {
                 throw new TaskNotCancelableError();
             }
 
-            TaskUpdater updater = new TaskUpdater(eventQueue, context.getTaskId(), context.getTaskId());
+            TaskUpdater updater = new TaskUpdater(eventQueue, context);
             updater.cancel();
             eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
                     .taskId(task.getId())
