@@ -11,21 +11,31 @@ public enum TaskState {
     WORKING("working"),
     INPUT_REQUIRED("input-required"),
     AUTH_REQUIRED("auth-required"),
-    COMPLETED("completed"),
-    CANCELED("canceled"),
-    FAILED("failed"),
-    REJECTED("rejected"),
-    UNKNOWN("unknown");
+    COMPLETED("completed", true),
+    CANCELED("canceled", true),
+    FAILED("failed", true),
+    REJECTED("rejected", true),
+    UNKNOWN("unknown", true);
 
     private final String state;
+    private final boolean isFinal;
 
     TaskState(String state) {
+        this(state, false);
+    }
+
+    TaskState(String state, boolean isFinal) {
         this.state = state;
+        this.isFinal = isFinal;
     }
 
     @JsonValue
     public String asString() {
         return state;
+    }
+
+    public boolean isFinal(){
+        return isFinal;
     }
 
     @JsonCreator

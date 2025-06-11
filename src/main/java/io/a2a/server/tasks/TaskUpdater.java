@@ -25,20 +25,15 @@ public class TaskUpdater {
         this.contextId = context.getContextId();
     }
 
-    public void updateStatus(TaskState taskState) {
+    private void updateStatus(TaskState taskState) {
         updateStatus(taskState, null);
     }
 
-    public void updateStatus(TaskState state, Message message) {
-        updateStatus(state, message, false);
-    }
-
-    public void updateStatus(TaskState state, Message message, boolean isFinal) {
-
+    private void updateStatus(TaskState state, Message message) {
         TaskStatusUpdateEvent event = new TaskStatusUpdateEvent.Builder()
                 .taskId(taskId)
                 .contextId(contextId)
-                .isFinal(isFinal)
+                .isFinal(state.isFinal())
                 .status(new TaskStatus(state, message, null))
                 .build();
         eventQueue.enqueueEvent(event);
@@ -68,7 +63,7 @@ public class TaskUpdater {
     }
 
     public void complete(Message message) {
-        updateStatus(TaskState.COMPLETED, message, true);
+        updateStatus(TaskState.COMPLETED, message);
     }
 
     public void fail() {
@@ -76,7 +71,7 @@ public class TaskUpdater {
     }
 
     public void fail(Message message) {
-        updateStatus(TaskState.FAILED, message, true);
+        updateStatus(TaskState.FAILED, message);
     }
 
     public void submit() {
@@ -100,7 +95,7 @@ public class TaskUpdater {
     }
 
     public void cancel(Message message) {
-        updateStatus(TaskState.CANCELED, message, true);
+        updateStatus(TaskState.CANCELED, message);
     }
 
     public Message newAgentMessage(List<Part<?>> parts, Map<String, Object> metadata) {

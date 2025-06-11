@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
@@ -49,30 +48,6 @@ public class TaskUpdaterTest {
                 .setContextId(TEST_TASK_CONTEXT_ID)
                 .build();
         taskUpdater = new TaskUpdater(eventQueue, context);
-    }
-
-    //@Test
-    //public void testInit() {
-    //    // Python has a unit test testing that the constructor works. Not really relevant
-    //}
-
-    @Test
-    public void testUpdateStatusWithoutMessage() throws Exception {
-        taskUpdater.updateStatus(TaskState.WORKING);
-        checkTaskStatusUpdateEventOnQueue(false, TaskState.WORKING, null);
-
-    }
-
-    @Test
-    public void testUpdateStatusWithMessage() throws Exception {
-        taskUpdater.updateStatus(TaskState.WORKING, SAMPLE_MESSAGE);
-        checkTaskStatusUpdateEventOnQueue(false, TaskState.WORKING, SAMPLE_MESSAGE);
-    }
-
-    @Test
-    public void testUpdateStatusFinal() throws Exception {
-        taskUpdater.updateStatus(TaskState.COMPLETED, null, true);
-        checkTaskStatusUpdateEventOnQueue(true, TaskState.COMPLETED, null);
     }
 
     @Test
