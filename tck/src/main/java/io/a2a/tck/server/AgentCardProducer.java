@@ -1,4 +1,4 @@
-package io.a2a.examples.helloworld.server;
+package io.a2a.tck.server;
 
 import java.util.Collections;
 import java.util.List;
