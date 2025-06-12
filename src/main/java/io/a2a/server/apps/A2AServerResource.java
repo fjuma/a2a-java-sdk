@@ -96,10 +96,8 @@ public class A2AServerResource {
     public Object handleRequests(JSONRPCRequest<?> request, @Context Sse sse, @Context SseEventSink sseEventSink) {
         if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
             return processStreamingRequest(request, sse, sseEventSink);
-        //} else {
-            //return processNonStreamingRequest(request);
         } else {
-            throw new RuntimeException();
+            return processNonStreamingRequest(request);
         }
     }
 
