@@ -10,12 +10,10 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 
@@ -49,6 +47,7 @@ import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import io.smallrye.mutiny.Multi;
 
+import org.jboss.resteasy.reactive.RestStreamElementType;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.jboss.resteasy.reactive.server.UnwrapException;
 
@@ -92,12 +91,25 @@ public class A2AServerResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
-    public Response handleRequests(JSONRPCRequest<?> request, @Context Sse sse, @Context SseEventSink sseEventSink) {
+    @RestStreamElementType(MediaType.APPLICATION_JSON)
+    public Multi<? extends JSONRPCResponse<?>> handleStreamingRequests(JSONRPCRequest<?> request) {
         if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
-            return processStreamingRequest(request, sse, sseEventSink);
+            return processStreamingRequest(request);
         } else {
+            // TODO
+            throw new RuntimeException();
+        }
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public JSONRPCResponse<?> handleNonStreamingRequests(JSONRPCRequest<?> request) {
+        if (! (request instanceof SendStreamingMessageRequest) && ! (request instanceof TaskResubscriptionRequest)) {
             return processNonStreamingRequest(request);
+        } else {
+            // TODO
+            throw new RuntimeException();
         }
     }
 
@@ -141,7 +153,7 @@ public class A2AServerResource {
                 .build();
     }
 
-    private Response processNonStreamingRequest(JSONRPCRequest<?> request) {
+    private JSONRPCResponse<?> processNonStreamingRequest(JSONRPCRequest<?> request) {
         JSONRPCResponse<?> response;
         if (request instanceof GetTaskRequest) {
             response = jsonRpcHandler.onGetTask((GetTaskRequest) request);
@@ -156,10 +168,11 @@ public class A2AServerResource {
         } else {
             response = generateErrorResponse(request, new UnsupportedOperationError());
         }
-        return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
+        return response;
+        //return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
     }
 
-    private Response processStreamingRequest(JSONRPCRequest<?> request, Sse sse, SseEventSink sseEventSink) {
+    private Multi<? extends JSONRPCResponse<?>> processStreamingRequest(JSONRPCRequest<?> request) {//, Sse sse, SseEventSink sseEventSink) {
         Flow.Publisher<? extends JSONRPCResponse<?>> publisher;
         if (request instanceof SendStreamingMessageRequest) {
             publisher = jsonRpcHandler.onMessageSendStream((SendStreamingMessageRequest) request);
@@ -171,7 +184,8 @@ public class A2AServerResource {
             throw new RuntimeException();
         }
         Multi<? extends JSONRPCResponse<?>> responses = Multi.createFrom().publisher(publisher);
-        responses.subscribe().with(
+        return responses;
+        /*responses.subscribe().with(
                 response -> {
                     OutboundSseEvent event = sse.newEventBuilder()
                             .mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -182,7 +196,7 @@ public class A2AServerResource {
                 failure -> sseEventSink.close(),
                 () -> sseEventSink.close()
         );
-        return Response.ok(responses).type(MediaType.SERVER_SENT_EVENTS).build();
+        return Response.ok(responses).type(MediaType.SERVER_SENT_EVENTS).build();*/
     }
 
     private void handleStreamingResponse(Flow.Publisher<? extends JSONRPCResponse<?>> publisher, SseEventSink sseEventSink, Sse sse) {
