@@ -70,12 +70,12 @@ public class A2AServerResource {
      * @param request the JSON-RPC request
      * @return the JSON-RPC response which may be an error response
      */
-    @POST
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public JSONRPCResponse<?> handleNonStreamingRequests(JSONRPCRequest<?> request) {
         return processNonStreamingRequest(request);
-    }
+    }*/
 
     /**
      * Handles incoming POST requests to the main A2A endpoint that involve Server-Sent Events (SSE).
