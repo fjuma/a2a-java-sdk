@@ -92,16 +92,16 @@ public class A2AServerResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     //@RestStreamElementType(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.SERVER_SENT_EVENTS)
-    public void handleRequests(JSONRPCRequest<?> request, @Context Sse sse, @Context SseEventSink sseEventSink) {
+    @Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
+    public Object handleRequests(JSONRPCRequest<?> request, @Context Sse sse, @Context SseEventSink sseEventSink) {
         if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
-            processStreamingRequest(request, sse, sseEventSink);
+            return processStreamingRequest(request, sse, sseEventSink);
+        //} else {
+            //return processNonStreamingRequest(request);
         } else {
             throw new RuntimeException();
         }
     }
-
-
 
     /**
      * Handles incoming GET requests to the agent card endpoint.
@@ -144,24 +144,22 @@ public class A2AServerResource {
     }
 
     private JSONRPCResponse<?> processNonStreamingRequest(JSONRPCRequest<?> request) {
-        JSONRPCResponse<?> response;
         if (request instanceof GetTaskRequest) {
-            response = jsonRpcHandler.onGetTask((GetTaskRequest) request);
+            return jsonRpcHandler.onGetTask((GetTaskRequest) request);
         } else if (request instanceof CancelTaskRequest) {
-            response = jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
+            return jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
         } else if (request instanceof SetTaskPushNotificationConfigRequest) {
-            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationConfigRequest) request);
+            return jsonRpcHandler.setPushNotification((SetTaskPushNotificationConfigRequest) request);
         } else if (request instanceof GetTaskPushNotificationConfigRequest) {
-            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationConfigRequest) request);
+            return jsonRpcHandler.getPushNotification((GetTaskPushNotificationConfigRequest) request);
         } else if (request instanceof SendMessageRequest) {
-            response = jsonRpcHandler.onMessageSend((SendMessageRequest) request);
+            return jsonRpcHandler.onMessageSend((SendMessageRequest) request);
         } else {
-            response = generateErrorResponse(request, new UnsupportedOperationError());
+            return generateErrorResponse(request, new UnsupportedOperationError());
         }
-        return response;
     }
 
-    private void processStreamingRequest(JSONRPCRequest<?> request, Sse sse, SseEventSink sseEventSink) {
+    private Object processStreamingRequest(JSONRPCRequest<?> request, Sse sse, SseEventSink sseEventSink) {
         Flow.Publisher<? extends JSONRPCResponse<?>> publisher;
         if (request instanceof SendStreamingMessageRequest) {
             publisher = jsonRpcHandler.onMessageSendStream((SendStreamingMessageRequest) request);
@@ -184,6 +182,7 @@ public class A2AServerResource {
                 failure -> sseEventSink.close(),
                 () -> sseEventSink.close()
         );
+        return responses;
     }
 
     private void handleStreamingResponse(Flow.Publisher<? extends JSONRPCResponse<?>> publisher, SseEventSink sseEventSink, Sse sse) {
