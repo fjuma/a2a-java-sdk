@@ -9,6 +9,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 import io.a2a.server.requesthandlers.JSONRPCHandler;
@@ -45,6 +47,8 @@ import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
+import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
+import org.jboss.resteasy.reactive.server.UnwrapException;
 
 @Path("/")
 public class A2AServerResource {
@@ -194,29 +198,46 @@ public class A2AServerResource {
 
     }
 
-    @Provider
-    public static class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
+    @UnwrapException(WebApplicationException.class)
+    public static class JsonEofExceptionMapper {
 
-        @Override
-        public Response toResponse(JsonMappingException exception) {
-            if (exception.getCause() instanceof JsonParseException) {
-                return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
-            } else if (exception instanceof MethodNotFoundJsonMappingException) {
-                Object id = ((MethodNotFoundJsonMappingException) exception).getId();
-                return Response.ok(new JSONRPCErrorResponse(id, new MethodNotFoundError()))
-                        .type(MediaType.APPLICATION_JSON).build();
-            } else if (exception instanceof InvalidParamsJsonMappingException) {
-                Object id = ((InvalidParamsJsonMappingException) exception).getId();
-                return Response.ok(new JSONRPCErrorResponse(id, new InvalidParamsError()))
-                        .type(MediaType.APPLICATION_JSON).build();
-            } else if (exception instanceof IdJsonMappingException) {
-                Object id = ((IdJsonMappingException) exception).getId();
-                return Response.ok(new JSONRPCErrorResponse(id, new InvalidRequestError()))
-                        .type(MediaType.APPLICATION_JSON).build();
-            }
-            // not possible to determine the request id
-            return Response.ok(new JSONRPCErrorResponse(new InvalidRequestError())).type(MediaType.APPLICATION_JSON).build();
+        @ServerExceptionMapper
+        public Response handle(JsonEOFException e) {
+            JSONRPCResponse response = new JSONRPCErrorResponse("unknown", new JSONParseError(e.getMessage()));
+            return Response.ok().entity(response).build();
         }
+
+        @ServerExceptionMapper
+        public Response handle(MethodNotFoundJsonMappingException e) {
+            return Response.ok(new JSONRPCErrorResponse(e.getId(), new MethodNotFoundError()))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
+
+        @ServerExceptionMapper
+        public Response handle(InvalidParamsJsonMappingException e) {
+            return Response.ok(new JSONRPCErrorResponse(e.getId(), new InvalidParamsError()))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
+
+        @ServerExceptionMapper
+        public Response handle(JsonParseException e) {
+            return Response.ok(new JSONRPCErrorResponse(new JSONParseError()))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
+
+        @ServerExceptionMapper
+        public Response handle(IdJsonMappingException e) {
+            return Response.ok(new JSONRPCErrorResponse(e.getId(), new InvalidRequestError()))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
+
+        @ServerExceptionMapper
+        public Response handle(JsonMappingException e) {
+            // not possible to determine the request id
+            return Response.ok(new JSONRPCErrorResponse(new InvalidRequestError()))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
+
 
     }
 }
