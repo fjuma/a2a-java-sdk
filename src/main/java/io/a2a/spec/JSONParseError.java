@@ -15,6 +15,10 @@ public class JSONParseError extends JSONRPCError implements A2AError {
         this(null, null, null);
     }
 
+    public JSONParseError(String message) {
+        this(null, message, null);
+    }
+
     @JsonCreator
     public JSONParseError(
             @JsonProperty("code") Integer code,
