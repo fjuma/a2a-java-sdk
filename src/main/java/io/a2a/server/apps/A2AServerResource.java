@@ -22,6 +22,7 @@ import jakarta.ws.rs.sse.SseEventSink;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 
 import io.a2a.server.requesthandlers.JSONRPCHandler;
 import io.a2a.spec.AgentCard;
@@ -241,6 +242,12 @@ public class A2AServerResource {
         @ServerExceptionMapper
         public Response handle(MethodNotFoundJsonMappingException e) {
             return Response.ok(new JSONRPCErrorResponse(e.getId(), new MethodNotFoundError()))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
+
+        @ServerExceptionMapper
+        public Response handle(InvalidTypeIdException e) {
+            return Response.ok(new JSONRPCErrorResponse(new MethodNotFoundError()))
                     .type(MediaType.APPLICATION_JSON).build();
         }
 
