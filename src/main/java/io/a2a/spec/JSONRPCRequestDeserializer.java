@@ -19,13 +19,13 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
-public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<JSONRPCRequest<?>> {
+public class JSONRPCRequestDeserializer extends StdDeserializer<JSONRPCRequest<?>> {
 
-    public JSONRPCRequestDeserializerBase() {
+    public JSONRPCRequestDeserializer() {
         this(null);
     }
 
-    public JSONRPCRequestDeserializerBase(Class<?> vc) {
+    public JSONRPCRequestDeserializer(Class<?> vc) {
         super(vc);
     }
 
@@ -44,21 +44,26 @@ public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<
             case CANCEL_TASK_METHOD:
                 return new CancelTaskRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
             case SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD:
-                return new SetTaskPushNotificationConfigRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
+                return new SetTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
             case GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD:
-                return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
             case SEND_MESSAGE_METHOD:
-                return new SendMessageRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
+                return new SendMessageRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
             case SEND_TASK_RESUBSCRIPTION_METHOD:
-                return new TaskResubscriptionRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                return new TaskResubscriptionRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
             case SEND_STREAMING_MESSAGE_METHOD:
-                return new SendStreamingMessageRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
+                return new SendStreamingMessageRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
             default:
                 throw new MethodNotFoundJsonMappingException("Invalid method", getIdIfPossible(treeNode, jsonParser));
         }
     }
 
-    protected <T> T getAndValidateParams(JsonNode paramsNode, JsonParser jsonParser, JsonNode node, Class<T> paramsType) throws JsonMappingException {
+    private <T> T getAndValidateParams(JsonNode paramsNode, JsonParser jsonParser, JsonNode node, Class<T> paramsType) throws JsonMappingException {
         if (paramsNode == null) {
             return null;
         }
@@ -69,7 +74,7 @@ public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<
         }
     }
 
-    protected String getAndValidateJsonrpc(JsonNode treeNode, JsonParser jsonParser) throws JsonMappingException {
+    private String getAndValidateJsonrpc(JsonNode treeNode, JsonParser jsonParser) throws JsonMappingException {
         JsonNode jsonrpcNode = treeNode.get("jsonrpc");
         if (jsonrpcNode == null || ! jsonrpcNode.asText().equals(A2A.JSONRPC_VERSION)) {
             throw new IdJsonMappingException("Invalid JSON-RPC protocol version", getIdIfPossible(treeNode, jsonParser));
@@ -77,7 +82,7 @@ public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<
         return jsonrpcNode.asText();
     }
 
-    protected String getAndValidateMethod(JsonNode treeNode, JsonParser jsonParser) throws JsonMappingException {
+    private String getAndValidateMethod(JsonNode treeNode, JsonParser jsonParser) throws JsonMappingException {
         JsonNode methodNode = treeNode.get("method");
         if (methodNode == null) {
             throw new IdJsonMappingException("Missing method", getIdIfPossible(treeNode, jsonParser));
@@ -89,7 +94,7 @@ public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<
         return method;
     }
 
-    protected Object getAndValidateId(JsonNode treeNode, JsonParser jsonParser) throws JsonProcessingException {
+    private Object getAndValidateId(JsonNode treeNode, JsonParser jsonParser) throws JsonProcessingException {
         JsonNode idNode = treeNode.get("id");
         Object id = null;
         if (idNode != null) {
@@ -104,7 +109,7 @@ public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<
         return id;
     }
 
-    protected Object getIdIfPossible(JsonNode treeNode, JsonParser jsonParser) {
+    private Object getIdIfPossible(JsonNode treeNode, JsonParser jsonParser) {
         try {
             return getAndValidateId(treeNode, jsonParser);
         } catch (JsonProcessingException e) {

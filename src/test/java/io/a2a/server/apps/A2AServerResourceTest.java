@@ -72,7 +72,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -321,8 +320,8 @@ public class A2AServerResourceTest {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("data: ")) {
-                        SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                    if (line.startsWith("data:")) {
+                        SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data:".length()).trim(), SendStreamingMessageResponse.class);
                         assertNull(sendStreamingMessageResponse.getError());
                         Message messageResponse = (Message) sendStreamingMessageResponse.getResult();
                         assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
@@ -438,8 +437,8 @@ public class A2AServerResourceTest {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        if (line.startsWith("data: ")) {
-                            SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                        if (line.startsWith("data:")) {
+                            SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data:".length()).trim(), SendStreamingMessageResponse.class);
                             if (taskResubscriptionResponseReceived.getCount() == 2) {
                                 firstResponse.set(sendStreamingMessageResponse);
                             } else {
@@ -526,8 +525,8 @@ public class A2AServerResourceTest {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                if (line.startsWith("data:")) {
+                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data:".length()).trim(), SendStreamingMessageResponse.class);
                     assertEquals(request.getId(), sendStreamingMessageResponse.getId());
                     assertNull(sendStreamingMessageResponse.getResult());
                     // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
@@ -751,8 +750,8 @@ public class A2AServerResourceTest {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                if (line.startsWith("data:")) {
+                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data:".length()).trim(), SendStreamingMessageResponse.class);
                     assertNull(sendStreamingMessageResponse.getError());
                     Message messageResponse =  (Message) sendStreamingMessageResponse.getResult();
                     assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());

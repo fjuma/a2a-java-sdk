@@ -18,7 +18,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSONRPCRequest<TaskIdParams> {
+public final class GetTaskPushNotificationConfigRequest extends JSONRPCRequest<TaskIdParams> {
 
     @JsonCreator
     public GetTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
