@@ -1,4 +1,4 @@
-/*package io.a2a.server.apps;
+package io.a2a.server.apps;
 
 import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
 import static io.a2a.spec.A2A.GET_TASK_METHOD;
@@ -16,7 +16,7 @@ import io.vertx.ext.web.RoutingContext;
 
 public class A2ARouteFilter {
 
-    @RouteFilter(100)
+    @RouteFilter(9999)
     void myFilter(RoutingContext routingContext) {
         HttpServerRequest request = routingContext.request();
 
@@ -24,6 +24,11 @@ public class A2ARouteFilter {
             routingContext.next();
             return;
         }
+        // If we were to set the Accept header here, we would end up with the correct selectedResource in
+        // MediaTypeMapper#handle. The problem is that the request body doesn't seem to be available at this
+        // point so we cannot determine how to set it here. The request body only seems to be available when
+        // setting the body handler below.
+        // routingContext.request().headers().set("Accept", MediaType.SERVER_SENT_EVENTS);
 
         routingContext.request().bodyHandler(buffer -> {
             try {
@@ -36,8 +41,8 @@ public class A2ARouteFilter {
             } catch (Exception e) {
                 throw new RuntimeException("Unable to read the request body");
             }
-            routingContext.setBody(buffer);
-            routingContext.next();
+            //routingContext.setBody(buffer);
+            //routingContext.next();
         });
         routingContext.next();
     }
@@ -58,4 +63,4 @@ public class A2ARouteFilter {
     private static void putAcceptHeader(RoutingContext routingContext, String mediaType) {
         routingContext.request().headers().set("Accept", mediaType);
     }
-}*/
+}
