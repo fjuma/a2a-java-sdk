@@ -10,12 +10,10 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 
@@ -49,6 +47,7 @@ import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import io.smallrye.mutiny.Multi;
 
+import org.jboss.resteasy.reactive.RestStreamElementType;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.jboss.resteasy.reactive.server.UnwrapException;
 
@@ -72,25 +71,26 @@ public class A2AServerResource {
      * @param request the JSON-RPC request
      * @return the JSON-RPC response which may be an error response
      */
-    /*@POST
+    @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public JSONRPCResponse<?> handleNonStreamingRequests(JSONRPCRequest<?> request) {
         return processNonStreamingRequest(request);
-    }*/
+    }
 
     /**
      * Handles incoming POST requests to the main A2A endpoint that involve Server-Sent Events (SSE).
      * Dispatches the request to the appropriate JSON-RPC handler method and returns the response.
      */
-    /*@POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.SERVER_SENT_EVENTS)
-    public void handleStreamingRequests(StreamingJSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
-        processStreamingRequest(request, sseEventSink, sse);
-    }*/
-
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RestStreamElementType(MediaType.APPLICATION_JSON)
+    //@Produces(MediaType.SERVER_SENT_EVENTS)
+    public Multi<? extends JSONRPCResponse<?>> handleStreamingRequests(JSONRPCRequest<?> request) {
+        return processStreamingRequest(request);
+    }
+
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     //@RestStreamElementType(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
@@ -100,7 +100,7 @@ public class A2AServerResource {
         } else {
             return processNonStreamingRequest(request);
         }
-    }
+    }*/
 
     /**
      * Handles incoming GET requests to the agent card endpoint.
@@ -158,7 +158,7 @@ public class A2AServerResource {
         }
     }
 
-    private Object processStreamingRequest(JSONRPCRequest<?> request, Sse sse, SseEventSink sseEventSink) {
+    private Multi<? extends JSONRPCResponse<?>> processStreamingRequest(JSONRPCRequest<?> request) {
         Flow.Publisher<? extends JSONRPCResponse<?>> publisher;
         if (request instanceof SendStreamingMessageRequest) {
             publisher = jsonRpcHandler.onMessageSendStream((SendStreamingMessageRequest) request);
@@ -170,7 +170,7 @@ public class A2AServerResource {
             throw new RuntimeException();
         }
         Multi<? extends JSONRPCResponse<?>> responses = Multi.createFrom().publisher(publisher);
-        responses.subscribe().with(
+        /*responses.subscribe().with(
                 response -> {
                     OutboundSseEvent event = sse.newEventBuilder()
                             .mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -180,7 +180,7 @@ public class A2AServerResource {
                 },
                 failure -> sseEventSink.close(),
                 () -> sseEventSink.close()
-        );
+        );*/
         return responses;
     }
 
