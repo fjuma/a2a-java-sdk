@@ -1,4 +1,4 @@
-package io.a2a.server.apps;
+/*package io.a2a.server.apps;
 
 import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
 import static io.a2a.spec.A2A.GET_TASK_METHOD;
@@ -63,4 +63,4 @@ public class A2ARouteFilter {
     private static void putAcceptHeader(RoutingContext routingContext, String mediaType) {
         routingContext.request().headers().set("Accept", mediaType);
     }
-}
+}*/

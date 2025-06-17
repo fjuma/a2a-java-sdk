@@ -47,7 +47,6 @@ import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import io.smallrye.mutiny.Multi;
 
-import org.jboss.resteasy.reactive.RestStreamElementType;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.jboss.resteasy.reactive.server.UnwrapException;
 
@@ -71,36 +70,40 @@ public class A2AServerResource {
      * @param request the JSON-RPC request
      * @return the JSON-RPC response which may be an error response
      */
-    @POST
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public JSONRPCResponse<?> handleNonStreamingRequests(JSONRPCRequest<?> request) {
         return processNonStreamingRequest(request);
-    }
+    }*/
 
     /**
      * Handles incoming POST requests to the main A2A endpoint that involve Server-Sent Events (SSE).
      * Dispatches the request to the appropriate JSON-RPC handler method and returns the response.
      */
-    @POST
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     @RestStreamElementType(MediaType.APPLICATION_JSON)
     //@Produces(MediaType.SERVER_SENT_EVENTS)
     public Multi<? extends JSONRPCResponse<?>> handleStreamingRequests(JSONRPCRequest<?> request) {
         return processStreamingRequest(request);
-    }
-
-    /*@POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    //@RestStreamElementType(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
-    public Object handleRequests(JSONRPCRequest<?> request, @Context Sse sse, @Context SseEventSink sseEventSink) {
-        if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
-            return processStreamingRequest(request, sse, sseEventSink);
-        } else {
-            return processNonStreamingRequest(request);
-        }
     }*/
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response handleRequests(JSONRPCRequest<?> request) {
+        if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
+            Multi<? extends JSONRPCResponse<?>> sseResponse = processStreamingRequest(request);
+            return Response.ok(sseResponse)
+                    .type(MediaType.SERVER_SENT_EVENTS)
+                    .build();
+        } else {
+            JSONRPCResponse<?> response = processNonStreamingRequest(request);
+            return Response.ok(response)
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
+    }
 
     /**
      * Handles incoming GET requests to the agent card endpoint.
