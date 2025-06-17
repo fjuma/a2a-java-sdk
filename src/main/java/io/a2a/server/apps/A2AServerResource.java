@@ -10,10 +10,12 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 
@@ -91,9 +93,20 @@ public class A2AServerResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response handleRequests(JSONRPCRequest<?> request) {
+    public Response handleRequests(JSONRPCRequest<?> request, @Context Sse sse, @Context SseEventSink sseEventSink) {
         if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
             Multi<? extends JSONRPCResponse<?>> sseResponse = processStreamingRequest(request);
+            sseResponse.subscribe().with(
+                    response -> {
+                        OutboundSseEvent event = sse.newEventBuilder()
+                                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                                .data(JSONRPCResponse.class, response)
+                                .build();
+                        sseEventSink.send(event);
+                    },
+                    failure -> sseEventSink.close(),
+                    () -> sseEventSink.close()
+            );
             return Response.ok(sseResponse)
                     .type(MediaType.SERVER_SENT_EVENTS)
                     .build();
