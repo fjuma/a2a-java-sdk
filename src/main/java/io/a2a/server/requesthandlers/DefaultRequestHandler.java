@@ -34,6 +34,7 @@ import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.EventKind;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
@@ -308,7 +309,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError {
+    public TaskPushNotificationConfig onGetTaskPushNotificationConfig(GetTaskPushNotificationConfigParams params) throws JSONRPCError {
         if (pushNotifier == null) {
             throw new UnsupportedOperationError();
         }

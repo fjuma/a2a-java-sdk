@@ -1,7 +1,7 @@
 package io.a2a.spec;
 
-import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
+import static io.a2a.spec.A2A.LIST_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.util.Utils.defaultIfNull;
 
 import java.util.UUID;
@@ -18,17 +18,18 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSONRPCRequest<GetTaskPushNotificationConfigParams> {
+public final class ListTaskPushNotificationConfigRequest extends NonStreamingJSONRPCRequest<ListTaskPushNotificationConfigParams> {
 
     @JsonCreator
-    public GetTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                                                @JsonProperty("method") String method, @JsonProperty("params") GetTaskPushNotificationConfigParams params) {
+    public ListTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+                                                 @JsonProperty("method") String method,
+                                                 @JsonProperty("params") ListTaskPushNotificationConfigParams params) {
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
         Assert.checkNotNullParam("method", method);
-        if (! method.equals(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
-            throw new IllegalArgumentException("Invalid GetTaskPushNotificationRequest method");
+        if (! method.equals(LIST_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
+            throw new IllegalArgumentException("Invalid ListTaskPushNotificationRequest method");
         }
         Assert.isNullOrStringOrInteger(id);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
@@ -37,41 +38,41 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
         this.params = params;
     }
 
-    public GetTaskPushNotificationConfigRequest(String id, GetTaskPushNotificationConfigParams params) {
-        this(null, id, GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD, params);
+    public ListTaskPushNotificationConfigRequest(String id, ListTaskPushNotificationConfigParams params) {
+        this(null, id, LIST_TASK_PUSH_NOTIFICATION_CONFIG_METHOD, params);
     }
 
     public static class Builder {
         private String jsonrpc;
         private Object id;
         private String method;
-        private GetTaskPushNotificationConfigParams params;
+        private ListTaskPushNotificationConfigParams params;
 
-        public GetTaskPushNotificationConfigRequest.Builder jsonrpc(String jsonrpc) {
+        public ListTaskPushNotificationConfigRequest.Builder jsonrpc(String jsonrpc) {
             this.jsonrpc = jsonrpc;
             return this;
         }
 
-        public GetTaskPushNotificationConfigRequest.Builder id(Object id) {
+        public ListTaskPushNotificationConfigRequest.Builder id(Object id) {
             this.id = id;
             return this;
         }
 
-        public GetTaskPushNotificationConfigRequest.Builder method(String method) {
+        public ListTaskPushNotificationConfigRequest.Builder method(String method) {
             this.method = method;
             return this;
         }
 
-        public GetTaskPushNotificationConfigRequest.Builder params(GetTaskPushNotificationConfigParams params) {
+        public ListTaskPushNotificationConfigRequest.Builder params(ListTaskPushNotificationConfigParams params) {
             this.params = params;
             return this;
         }
 
-        public GetTaskPushNotificationConfigRequest build() {
+        public ListTaskPushNotificationConfigRequest build() {
             if (id == null) {
                 id = UUID.randomUUID().toString();
             }
-            return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method, params);
+            return new ListTaskPushNotificationConfigRequest(jsonrpc, id, method, params);
         }
     }
 }

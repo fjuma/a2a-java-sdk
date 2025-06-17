@@ -1,8 +1,10 @@
 package io.a2a.spec;
 
 import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
+import static io.a2a.spec.A2A.DELETE_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.spec.A2A.GET_TASK_METHOD;
 import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
+import static io.a2a.spec.A2A.LIST_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.spec.A2A.SEND_MESSAGE_METHOD;
 import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 
@@ -44,10 +46,16 @@ public class NonStreamingJSONRPCRequestDeserializer extends JSONRPCRequestDeseri
                         getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
             case GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD:
                 return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method,
-                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, GetTaskPushNotificationConfigParams.class));
             case SEND_MESSAGE_METHOD:
                 return new SendMessageRequest(jsonrpc, id, method,
                         getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
+            case LIST_TASK_PUSH_NOTIFICATION_CONFIG_METHOD:
+                return new ListTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, ListTaskPushNotificationConfigParams.class));
+            case DELETE_TASK_PUSH_NOTIFICATION_CONFIG_METHOD:
+                return new DeleteTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, DeleteTaskPushNotificationConfigParams.class));
             default:
                 throw new MethodNotFoundJsonMappingException("Invalid method", getIdIfPossible(treeNode, jsonParser));
         }

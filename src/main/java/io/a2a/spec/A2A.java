@@ -24,6 +24,8 @@ public class A2A {
     public static final String SEND_TASK_RESUBSCRIPTION_METHOD = "tasks/resubscribe";
     public static final String SEND_STREAMING_MESSAGE_METHOD = "message/stream";
     public static final String SEND_MESSAGE_METHOD = "message/send";
+    public static final String LIST_TASK_PUSH_NOTIFICATION_CONFIG_METHOD = "tasks/pushNotificationConfig/list";
+    public static final String DELETE_TASK_PUSH_NOTIFICATION_CONFIG_METHOD = "tasks/pushNotificationConfig/delete";
 
     public static final String JSONRPC_VERSION = "2.0";
 

@@ -3,6 +3,7 @@ package io.a2a.server.requesthandlers;
 import java.util.concurrent.Flow;
 
 import io.a2a.spec.EventKind;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.StreamingEventKind;
@@ -22,7 +23,7 @@ public interface RequestHandler {
 
     TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCError;
 
-    TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError;
+    TaskPushNotificationConfig onGetTaskPushNotificationConfig(GetTaskPushNotificationConfigParams params) throws JSONRPCError;
 
     Flow.Publisher<StreamingEventKind> onResubscribeToTask(TaskIdParams params) throws JSONRPCError;
 }

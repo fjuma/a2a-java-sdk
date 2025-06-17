@@ -41,6 +41,7 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -636,7 +637,7 @@ public class JSONRPCHandlerTest {
         handler.setPushNotification(request);
 
         GetTaskPushNotificationConfigRequest getRequest =
-                new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+                new GetTaskPushNotificationConfigRequest("111", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
         GetTaskPushNotificationConfigResponse getResponse = handler.getPushNotification(getRequest);
 
         assertEquals(taskPushConfig, getResponse.getResult());
@@ -1056,7 +1057,7 @@ public class JSONRPCHandlerTest {
         taskStore.save(MINIMAL_TASK);
 
         GetTaskPushNotificationConfigRequest request =
-                new GetTaskPushNotificationConfigRequest("id", new TaskIdParams(MINIMAL_TASK.getId()));
+                new GetTaskPushNotificationConfigRequest("id", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
         GetTaskPushNotificationConfigResponse response = handler.getPushNotification(request);
 
         assertNotNull(response.getError());

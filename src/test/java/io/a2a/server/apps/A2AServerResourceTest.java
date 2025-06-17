@@ -35,6 +35,7 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -389,7 +390,7 @@ public class A2AServerResourceTest {
             assertNotNull(setTaskPushNotificationResponse);
 
             GetTaskPushNotificationConfigRequest request =
-                    new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+                    new GetTaskPushNotificationConfigRequest("111", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
             GetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
