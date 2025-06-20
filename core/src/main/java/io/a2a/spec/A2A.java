@@ -1,14 +1,10 @@
 package io.a2a.spec;
 
-import static io.a2a.util.Utils.unmarshalFrom;
-
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import io.a2a.client.A2ACardResolver;
 import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
 import io.a2a.http.JdkA2AHttpClient;
 
 
@@ -27,13 +23,6 @@ public class A2A {
 
     public static final String JSONRPC_VERSION = "2.0";
 
-    public static final String AGENT_CARD_REQUEST = ".well-known/agent.json";
-
-    private static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
-
-    public static String getRequestEndpoint(String agentUrl, String request) {
-        return agentUrl.endsWith("/") ? agentUrl + request : agentUrl + "/" + request;
-    }
 
     /**
      * Convert the given text to a user message.
@@ -93,9 +82,10 @@ public class A2A {
      *
      * @param agentUrl the base URL for the agent whose agent card we want to retrieve
      * @return the agent card
-     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     * @throws A2AClientError If an HTTP error occurs fetching the card
+     * @throws A2AClientJSONError f the response body cannot be decoded as JSON or validated against the AgentCard schema
      */
-    public static AgentCard getAgentCard(String agentUrl) throws A2AServerException {
+    public static AgentCard getAgentCard(String agentUrl) throws A2AClientError, A2AClientJSONError {
         return getAgentCard(new JdkA2AHttpClient(), agentUrl);
     }
 
@@ -105,9 +95,10 @@ public class A2A {
      * @param httpClient the http client to use
      * @param agentUrl the base URL for the agent whose agent card we want to retrieve
      * @return the agent card
-     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     * @throws A2AClientError If an HTTP error occurs fetching the card
+     * @throws A2AClientJSONError f the response body cannot be decoded as JSON or validated against the AgentCard schema
      */
-    public static AgentCard getAgentCard(A2AHttpClient httpClient, String agentUrl) throws A2AServerException {
+    public static AgentCard getAgentCard(A2AHttpClient httpClient, String agentUrl) throws A2AClientError, A2AClientJSONError  {
         return getAgentCard(httpClient, agentUrl, null, null);
     }
 
@@ -119,9 +110,10 @@ public class A2A {
      *                         agent URL, defaults to ".well-known/agent.json"
      * @param authHeaders the HTTP authentication headers to use
      * @return the agent card
-     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     * @throws A2AClientError If an HTTP error occurs fetching the card
+     * @throws A2AClientJSONError f the response body cannot be decoded as JSON or validated against the AgentCard schema
      */
-    public static AgentCard getAgentCard(String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
+    public static AgentCard getAgentCard(String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AClientError, A2AClientJSONError {
         return getAgentCard(new JdkA2AHttpClient(), agentUrl, relativeCardPath, authHeaders);
     }
 
@@ -134,38 +126,12 @@ public class A2A {
      *                         agent URL, defaults to ".well-known/agent.json"
      * @param authHeaders the HTTP authentication headers to use
      * @return the agent card
-     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     * @throws A2AClientError If an HTTP error occurs fetching the card
+     * @throws A2AClientJSONError f the response body cannot be decoded as JSON or validated against the AgentCard schema
      */
-    public static AgentCard getAgentCard(A2AHttpClient httpClient, String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
-        if (relativeCardPath == null || relativeCardPath.isEmpty()) {
-            relativeCardPath = AGENT_CARD_REQUEST;
-        } else {
-            if (relativeCardPath.startsWith("/")) {
-                relativeCardPath = relativeCardPath.substring(1);
-            }
-        }
-        A2AHttpClient.GetBuilder builder = httpClient.createGet()
-                .url(getRequestEndpoint(agentUrl, relativeCardPath))
-                .addHeader("Content-Type", "application/json");
-
-        if (authHeaders != null) {
-            for (Map.Entry<String, String> entry : authHeaders.entrySet()) {
-                builder.addHeader(entry.getKey(), entry.getValue());
-            }
-        }
-
-        try {
-            A2AHttpResponse response = builder.get();
-            if (!response.success()) {
-                throw new A2AServerException("Failed to obtain agent card: " + response.status());
-            }
-            String body = response.body();
-            return unmarshalFrom(body, AGENT_CARD_TYPE_REFERENCE);
-        } catch (IOException e) {
-            throw new A2AServerException("Failed to obtain agent card", e);
-        } catch (InterruptedException e) {
-            throw new A2AServerException("Timed out obtaining agent card", e);
-        }
+    public static AgentCard getAgentCard(A2AHttpClient httpClient, String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AClientError, A2AClientJSONError  {
+        A2ACardResolver resolver = new A2ACardResolver(httpClient, agentUrl, relativeCardPath, authHeaders);
+        return resolver.getAgentCard();
     }
 
     protected static boolean isValidMethodName(String methodName) {
