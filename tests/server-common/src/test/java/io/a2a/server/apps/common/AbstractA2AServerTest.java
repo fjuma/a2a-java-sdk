@@ -154,7 +154,7 @@ public abstract class AbstractA2AServerTest {
                 .extract()
                 .as(GetTaskResponse.class);
         assertEquals("1", response.getId());
-        // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+        // this should be an instance of TaskNotFoundError, see https://github.com/a2aproject/a2a-java/issues/23
         assertInstanceOf(JSONRPCError.class, response.getError());
         assertEquals(new TaskNotFoundError().getCode(), response.getError().getCode());
         assertNull(response.getResult());
@@ -202,7 +202,7 @@ public abstract class AbstractA2AServerTest {
                     .as(CancelTaskResponse.class);
             assertEquals(request.getId(), response.getId());
             assertNull(response.getResult());
-            // this should be an instance of UnsupportedOperationError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+            // this should be an instance of UnsupportedOperationError, see https://github.com/a2aproject/a2a-java/issues/23
             assertInstanceOf(JSONRPCError.class, response.getError());
             assertEquals(new UnsupportedOperationError().getCode(), response.getError().getCode());
         } catch (Exception e) {
@@ -225,7 +225,7 @@ public abstract class AbstractA2AServerTest {
                 .as(CancelTaskResponse.class);
         assertEquals(request.getId(), response.getId());
         assertNull(response.getResult());
-        // this should be an instance of UnsupportedOperationError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+        // this should be an instance of UnsupportedOperationError, see https://github.com/a2aproject/a2a-java/issues/23
         assertInstanceOf(JSONRPCError.class, response.getError());
         assertEquals(new TaskNotFoundError().getCode(), response.getError().getCode());
     }
@@ -376,7 +376,7 @@ public abstract class AbstractA2AServerTest {
                 .as(SendMessageResponse.class);
         assertEquals(request.getId(), response.getId());
         assertNull(response.getResult());
-        // this should be an instance of UnsupportedOperationError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+        // this should be an instance of UnsupportedOperationError, see https://github.com/a2aproject/a2a-java/issues/23
         assertInstanceOf(JSONRPCError.class, response.getError());
         assertEquals(new UnsupportedOperationError().getCode(), response.getError().getCode());
     }
@@ -732,7 +732,7 @@ public abstract class AbstractA2AServerTest {
                     if (jsonResponse != null) {
                         assertEquals(request.getId(), jsonResponse.getId());
                         assertNull(jsonResponse.getResult());
-                        // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+                        // this should be an instance of TaskNotFoundError, see https://github.com/a2aproject/a2a-java/issues/23
                         assertInstanceOf(JSONRPCError.class, jsonResponse.getError());
                         assertEquals(new TaskNotFoundError().getCode(), jsonResponse.getError().getCode());
                         latch.countDown();

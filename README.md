@@ -1,7 +1,14 @@
 # A2A Java SDK
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+<!-- markdownlint-disable no-inline-html -->
+
 <html>
-   <h3 align="center">A Java library that helps run agentic applications as A2AServers following Google's <a href="https://google-a2a.github.io/A2A">Agent2Agent (A2A) Protocol</a>.</h3>
+   <h2 align="center">
+   <img src="https://raw.githubusercontent.com/google-a2a/A2A/refs/heads/main/docs/assets/a2a-logo-black.svg" width="256" alt="A2A Logo"/>
+   </h2>
+   <h3 align="center">A Java library that helps run agentic applications as A2AServers following the <a href="https://google-a2a.github.io/A2A">Agent2Agent (A2A) Protocol</a>.</h3>
 </html>
 
 ## Installation
@@ -30,7 +37,7 @@ The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A)
 ### 1. Add the A2A Java SDK Core Maven dependency to your project
 
 > **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
-> sure to check out the latest tag (you can see the tags [here](https://github.com/fjuma/a2a-java-sdk/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
+> sure to check out the latest tag (you can see the tags [here](https://github.com/a2aproject/a2a-java/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
 
 ```xml
 <dependency>
@@ -176,7 +183,7 @@ public class WeatherAgentExecutorProducer {
 ### 4. Add an A2A Java SDK Server Maven dependency to your project
 
 > **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
-> sure to check out the latest tag (you can see the tags [here](https://github.com/fjuma/a2a-java-sdk/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
+> sure to check out the latest tag (you can see the tags [here](https://github.com/a2aproject/a2a-java/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
 
 Adding a dependency on an A2A Java SDK Server will allow you to run your agentic Java application as an A2A server.
 

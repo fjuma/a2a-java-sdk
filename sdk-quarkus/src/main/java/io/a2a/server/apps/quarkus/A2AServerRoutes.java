@@ -161,7 +161,7 @@ public class A2AServerRoutes {
     @Route(path = "/agent/authenticatedExtendedCard", methods = Route.HttpMethod.GET, produces = APPLICATION_JSON)
     public void getAuthenticatedExtendedAgentCard(RoutingExchange re) {
         // TODO need to add authentication for this endpoint
-        // https://github.com/fjuma/a2a-java-sdk/issues/77
+        // https://github.com/a2aproject/a2a-java/issues/77
         try {
             if (! jsonRpcHandler.getAgentCard().supportsAuthenticatedExtendedCard()) {
                 JSONErrorResponse errorResponse = new JSONErrorResponse("Extended agent card not supported or not enabled.");

@@ -117,7 +117,7 @@ public class A2AServerResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAuthenticatedExtendedAgentCard() {
         // TODO need to add authentication for this endpoint
-        // https://github.com/fjuma/a2a-java-sdk/issues/77
+        // https://github.com/a2aproject/a2a-java/issues/77
         if (! jsonRpcHandler.getAgentCard().supportsAuthenticatedExtendedCard()) {
             JSONErrorResponse errorResponse = new JSONErrorResponse("Extended agent card not supported or not enabled.");
             return Response.status(Response.Status.NOT_FOUND)

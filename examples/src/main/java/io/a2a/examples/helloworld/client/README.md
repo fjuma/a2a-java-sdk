@@ -47,10 +47,10 @@ The Java client can be run using JBang, which allows you to run Java source file
 
 ### Build the A2A Java SDK
 
-First, ensure you have built the `a2a-java-sdk` project:
+First, ensure you have built the `a2a-java` project:
 
 ```bash
-cd /path/to/a2a-java-sdk
+cd /path/to/a2a-java
 mvn clean install
 ```
 
@@ -81,7 +81,7 @@ Alternatively, you can run the Java client with JBang by specifying the classpat
    mvn clean package
    ```
 
-2. Run the Java client with JBang from the root of the a2a-java-sdk project:
+2. Run the Java client with JBang from the root of the a2a-java project:
    ```bash
    jbang --cp target/classes examples/src/main/java/io/a2a/examples/helloworld/client/HelloWorldClient.java
    ```

@@ -63,7 +63,7 @@ reported to the community leaders responsible for enforcement:
 
 Farah Juma - fjuma@redhat.com \
 Kabir Khan - kkhan@redhat.com \
-Stefano Maestri - smaestri@redhat.com \
+Stefano Maestri - smaestri@redhat.com
 
 All complaints will be reviewed and investigated promptly and fairly.
 
