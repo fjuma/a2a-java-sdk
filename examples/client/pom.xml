@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.a2a.sdk</groupId>
+        <artifactId>a2a-java-sdk-examples-parent</artifactId>
+        <version>0.2.4-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>a2a-java-sdk-examples-client</artifactId>
+
+    <name>Java SDK A2A Examples</name>
+    <description>Examples for the Java SDK for the Agent2Agent Protocol (A2A)</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.a2a.sdk</groupId>
+            <artifactId>a2a-java-sdk-core</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,4 +1,4 @@
-package io.a2a.examples.helloworld.server;
+package io.a2a.examples.helloworld;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;

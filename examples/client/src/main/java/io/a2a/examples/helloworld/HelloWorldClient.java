@@ -1,4 +1,4 @@
-package io.a2a.examples.helloworld.client;
+package io.a2a.examples.helloworld;
 
 import java.util.HashMap;
 import java.util.Map;

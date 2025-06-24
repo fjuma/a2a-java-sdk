@@ -1,6 +1,5 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
-//REPOS file://~/.m2/repository/
-//DEPS io.a2a.sdk:a2a-java-sdk:0.2.4-SNAPSHOT
+//DEPS io.a2a.sdk:a2a-java-sdk-core:0.2.4-SNAPSHOT
 //SOURCES HelloWorldClient.java
 
 /**
@@ -18,6 +17,6 @@
  */
 public class HelloWorldRunner {
     public static void main(String[] args) {
-        io.a2a.examples.helloworld.client.HelloWorldClient.main(args);
+        io.a2a.examples.helloworld.HelloWorldClient.main(args);
     }
 } 

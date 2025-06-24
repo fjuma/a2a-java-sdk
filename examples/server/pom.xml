@@ -6,37 +6,35 @@
 
     <parent>
         <groupId>io.a2a.sdk</groupId>
-        <artifactId>a2a-java-sdk-parent</artifactId>
+        <artifactId>a2a-java-sdk-examples-parent</artifactId>
         <version>0.2.4-SNAPSHOT</version>
     </parent>
 
-    <artifactId>a2a-java-sdk-examples-parent</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>a2a-java-sdk-examples-server</artifactId>
 
     <name>Java SDK A2A Examples</name>
     <description>Examples for the Java SDK for the Agent2Agent Protocol (A2A)</description>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-bom</artifactId>
-                <version>${quarkus.platform.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.a2a.sdk</groupId>
-                <artifactId>a2a-java-sdk-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.a2a.sdk</groupId>
-                <artifactId>a2a-java-sdk-server-quarkus</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>io.a2a.sdk</groupId>
+            <artifactId>a2a-java-sdk-server-quarkus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-jackson</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -56,9 +54,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <modules>
-        <module>client</module>
-        <module>server</module>
-    </modules>
 </project>

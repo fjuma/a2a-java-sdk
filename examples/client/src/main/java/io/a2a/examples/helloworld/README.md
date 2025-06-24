@@ -54,7 +54,7 @@ cd /path/to/a2a-java
 mvn clean install
 ```
 
-### Option 1: Using the JBang script (Recommended)
+### Using the JBang script
 
 A JBang script is provided in the example directory to make running the client easy:
 
@@ -62,7 +62,7 @@ A JBang script is provided in the example directory to make running the client e
 
 2. Navigate to the example directory:
    ```bash
-   cd examples/src/main/java/io/a2a/examples/helloworld/client
+   cd examples/client/src/main/java/io/a2a/examples/helloworld
    ```
 
 3. Run the client using the JBang script:
@@ -71,20 +71,6 @@ A JBang script is provided in the example directory to make running the client e
    ```
 
 This script automatically handles the dependencies and sources for you.
-
-### Option 2: Running with explicit classpath
-
-Alternatively, you can run the Java client with JBang by specifying the classpath explicitly:
-
-1. First, build the project with Maven:
-   ```bash
-   mvn clean package
-   ```
-
-2. Run the Java client with JBang from the root of the a2a-java project:
-   ```bash
-   jbang --cp target/classes examples/src/main/java/io/a2a/examples/helloworld/client/HelloWorldClient.java
-   ```
 
 ## What the Example Does
 
