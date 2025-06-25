@@ -22,10 +22,10 @@ import jakarta.ws.rs.sse.SseEventSink;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+import io.a2a.server.ExtendedAgentCard;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
-import io.a2a.spec.ExtendedAgentCard;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.IdJsonMappingException;
@@ -47,7 +47,7 @@ import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
-import io.a2a.util.async.Internal;
+import io.a2a.server.util.async.Internal;
 
 @Path("/")
 public class A2AServerResource {

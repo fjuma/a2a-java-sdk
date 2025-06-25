@@ -4,17 +4,16 @@ import static io.a2a.util.Utils.OBJECT_MAPPER;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskStatusUpdateEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SSEEventListener {
-    private static final Logger log = LoggerFactory.getLogger(SSEEventListener.class);
+    private static final Logger log = Logger.getLogger(SSEEventListener.class.getName());
     private final Consumer<StreamingEventKind> eventHandler;
     private final Consumer<JSONRPCError> errorHandler;
     private final Runnable failureHandler;
@@ -29,7 +28,7 @@ public class SSEEventListener {
         try {
             handleMessage(OBJECT_MAPPER.readTree(message),completableFuture);
         } catch (JsonProcessingException e) {
-            log.warn("Failed to parse JSON message: {}", message, e);
+            log.warning("Failed to parse JSON message: " + message);
         }
     }
 

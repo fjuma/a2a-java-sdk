@@ -4,15 +4,11 @@ import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.http.A2AHttpClient;
 import io.a2a.http.A2AHttpResponse;
-import io.a2a.spec.A2A;
 import io.a2a.spec.A2AClientError;
 import io.a2a.spec.A2AClientJSONError;
 import io.a2a.spec.AgentCard;
