@@ -27,9 +27,7 @@ public class RequestContext {
         this.taskId = taskId;
         this.contextId = contextId;
         this.task = task;
-        if (relatedTasks == null) {
-            this.relatedTasks = new ArrayList<>();
-        }
+        this.relatedTasks = relatedTasks == null ? new ArrayList<>() : relatedTasks;
 
         // if the taskId and contextId were specified, they must match the params
         if (params != null) {
