@@ -1,6 +1,12 @@
 package io.a2a.server.agentexecution;
 
-import io.a2a.spec.*;
+import io.a2a.spec.InvalidParamsError;
+import io.a2a.spec.Message;
+import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.Task;
+import io.a2a.spec.TaskStatus;
+import io.a2a.spec.TaskState;
+import io.a2a.spec.TextPart;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -8,7 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
