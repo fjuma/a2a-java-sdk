@@ -11,14 +11,11 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import jakarta.enterprise.context.Dependent;
-
 import io.a2a.http.A2AHttpClient;
 import io.a2a.http.A2AHttpResponse;
 import io.a2a.spec.A2AClientError;
 import io.a2a.spec.A2AClientJSONError;
 import io.a2a.spec.AgentCard;
-import io.quarkus.arc.profile.IfBuildProfile;
 import org.junit.jupiter.api.Test;
 
 public class A2ACardResolverTest {
@@ -108,8 +105,6 @@ public class A2ACardResolverTest {
         assertTrue(msg.contains("503"));
     }
 
-    @Dependent
-    @IfBuildProfile("test")
     private static class TestHttpClient implements A2AHttpClient {
         int status = 200;
         String body;

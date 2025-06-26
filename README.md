@@ -50,10 +50,10 @@ The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A)
 ### 2. Add a class that creates an A2A Agent Card
 
 ```java
+import io.a2a.server.PublicAgentCard;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
-import io.a2a.spec.PublicAgentCard;
 ...
 
 @ApplicationScoped

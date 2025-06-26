@@ -7,7 +7,6 @@ import static io.a2a.spec.TaskStatusUpdateEvent.STATUS_UPDATE;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.a2a.server.events.Event;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
