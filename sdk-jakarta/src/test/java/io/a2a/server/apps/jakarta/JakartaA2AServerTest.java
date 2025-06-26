@@ -6,8 +6,6 @@ import io.a2a.server.apps.common.AbstractA2AServerTest;
 import io.a2a.server.events.InMemoryQueueManager;
 import io.a2a.server.tasks.TaskStore;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class JakartaA2AServerTest extends AbstractA2AServerTest {
