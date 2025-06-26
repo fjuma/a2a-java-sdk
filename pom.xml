@@ -182,6 +182,7 @@
         <module>sdk-server-common</module>
         <module>sdk-jakarta</module>
         <module>sdk-quarkus</module>
+        <module>sdk-spring</module>
         <module>tck</module>
         <module>examples</module>
         <module>tests/server-common</module>
