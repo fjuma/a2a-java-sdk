@@ -1,7 +1,6 @@
 package io.a2a.server.apps.jakarta;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 
 import jakarta.enterprise.inject.Instance;

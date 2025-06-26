@@ -3,13 +3,8 @@ package io.a2a.server.events;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.enterprise.context.ApplicationScoped;
-
-import io.a2a.server.util.TempLoggerWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class InMemoryQueueManager implements QueueManager {
