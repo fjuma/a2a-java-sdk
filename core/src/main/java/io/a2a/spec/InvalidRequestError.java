@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InvalidRequestError extends JSONRPCError {
 
+    public final static Integer DEFAULT_CODE = -32600;
+
     public InvalidRequestError() {
         this(null, null, null);
     }
@@ -21,7 +23,7 @@ public class InvalidRequestError extends JSONRPCError {
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32600),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "Request payload validation error"),
                 data);
     }

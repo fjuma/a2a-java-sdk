@@ -13,13 +13,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InvalidAgentResponseError extends JSONRPCError {
+
+    public final static Integer DEFAULT_CODE = -32006;
+
     @JsonCreator
     public InvalidAgentResponseError(
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32006),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "Invalid agent response"),
                 data);
     }
