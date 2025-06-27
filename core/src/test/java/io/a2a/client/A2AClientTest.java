@@ -14,6 +14,12 @@ import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_ERROR_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_FILE_PART_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_FILE_PART_TEST_RESPONSE;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_DATA_PART_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_DATA_PART_TEST_RESPONSE;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_MIXED_PARTS_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_MIXED_PARTS_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +41,7 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.DataPart;
 import io.a2a.spec.FileContent;
 import io.a2a.spec.FilePart;
 import io.a2a.spec.FileWithBytes;
@@ -507,5 +514,184 @@ public class A2AClientTest {
         assertEquals(List.of("extended"), skills.get(2).tags());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
         assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
+    }
+
+    @Test
+    public void testA2AClientSendMessageWithFilePart() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/")
+                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_FILE_PART_TEST_REQUEST, MatchType.STRICT))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(SEND_MESSAGE_WITH_FILE_PART_TEST_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        Message message = new Message.Builder()
+                .role(Message.Role.USER)
+                .parts(List.of(
+                        new TextPart("analyze this image"),
+                        new FilePart(new FileWithUri("image/jpeg", null, "file:///path/to/image.jpg"))
+                ))
+                .contextId("context-1234")
+                .messageId("message-1234-with-file")
+                .build();
+        MessageSendConfiguration configuration = new MessageSendConfiguration.Builder()
+                .acceptedOutputModes(List.of("text"))
+                .blocking(true)
+                .build();
+        MessageSendParams params = new MessageSendParams.Builder()
+                .message(message)
+                .configuration(configuration)
+                .build();
+
+        SendMessageResponse response = client.sendMessage("request-1234-with-file", params);
+
+        assertEquals("2.0", response.getJsonrpc());
+        assertNotNull(response.getId());
+        Object result = response.getResult();
+        assertInstanceOf(Task.class, result);
+        Task task = (Task) result;
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.getId());
+        assertNotNull(task.getContextId());
+        assertEquals(TaskState.COMPLETED, task.getStatus().state());
+        assertEquals(1, task.getArtifacts().size());
+        Artifact artifact = task.getArtifacts().get(0);
+        assertEquals("artifact-1", artifact.artifactId());
+        assertEquals("image-analysis", artifact.name());
+        assertEquals(1, artifact.parts().size());
+        Part<?> part = artifact.parts().get(0);
+        assertEquals(Part.Kind.TEXT, part.getKind());
+        assertEquals("This is an image of a cat sitting on a windowsill.", ((TextPart) part).getText());
+        assertTrue(task.getMetadata().isEmpty());
+    }
+
+    @Test
+    public void testA2AClientSendMessageWithDataPart() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/")
+                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_DATA_PART_TEST_REQUEST, MatchType.STRICT))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(SEND_MESSAGE_WITH_DATA_PART_TEST_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        
+        Map<String, Object> data = new HashMap<>();
+        data.put("temperature", 25.5);
+        data.put("humidity", 60.2);
+        data.put("location", "San Francisco");
+        data.put("timestamp", "2024-01-15T10:30:00Z");
+        
+        Message message = new Message.Builder()
+                .role(Message.Role.USER)
+                .parts(List.of(
+                        new TextPart("process this data"),
+                        new DataPart(data)
+                ))
+                .contextId("context-1234")
+                .messageId("message-1234-with-data")
+                .build();
+        MessageSendConfiguration configuration = new MessageSendConfiguration.Builder()
+                .acceptedOutputModes(List.of("text"))
+                .blocking(true)
+                .build();
+        MessageSendParams params = new MessageSendParams.Builder()
+                .message(message)
+                .configuration(configuration)
+                .build();
+
+        SendMessageResponse response = client.sendMessage("request-1234-with-data", params);
+
+        assertEquals("2.0", response.getJsonrpc());
+        assertNotNull(response.getId());
+        Object result = response.getResult();
+        assertInstanceOf(Task.class, result);
+        Task task = (Task) result;
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.getId());
+        assertNotNull(task.getContextId());
+        assertEquals(TaskState.COMPLETED, task.getStatus().state());
+        assertEquals(1, task.getArtifacts().size());
+        Artifact artifact = task.getArtifacts().get(0);
+        assertEquals("artifact-1", artifact.artifactId());
+        assertEquals("data-analysis", artifact.name());
+        assertEquals(1, artifact.parts().size());
+        Part<?> part = artifact.parts().get(0);
+        assertEquals(Part.Kind.TEXT, part.getKind());
+        assertEquals("Processed weather data: Temperature is 25.5°C, humidity is 60.2% in San Francisco.", ((TextPart) part).getText());
+        assertTrue(task.getMetadata().isEmpty());
+    }
+
+    @Test
+    public void testA2AClientSendMessageWithMixedParts() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/")
+                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_REQUEST, MatchType.STRICT))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        
+        Map<String, Object> data = new HashMap<>();
+        data.put("chartType", "bar");
+        data.put("dataPoints", List.of(10, 20, 30, 40));
+        data.put("labels", List.of("Q1", "Q2", "Q3", "Q4"));
+        
+        Message message = new Message.Builder()
+                .role(Message.Role.USER)
+                .parts(List.of(
+                        new TextPart("analyze this data and image"),
+                        new FilePart(new FileWithBytes("image/png", "chart.png", "aGVsbG8=")),
+                        new DataPart(data)
+                ))
+                .contextId("context-1234")
+                .messageId("message-1234-with-mixed")
+                .build();
+        MessageSendConfiguration configuration = new MessageSendConfiguration.Builder()
+                .acceptedOutputModes(List.of("text"))
+                .blocking(true)
+                .build();
+        MessageSendParams params = new MessageSendParams.Builder()
+                .message(message)
+                .configuration(configuration)
+                .build();
+
+        SendMessageResponse response = client.sendMessage("request-1234-with-mixed", params);
+
+        assertEquals("2.0", response.getJsonrpc());
+        assertNotNull(response.getId());
+        Object result = response.getResult();
+        assertInstanceOf(Task.class, result);
+        Task task = (Task) result;
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.getId());
+        assertNotNull(task.getContextId());
+        assertEquals(TaskState.COMPLETED, task.getStatus().state());
+        assertEquals(1, task.getArtifacts().size());
+        Artifact artifact = task.getArtifacts().get(0);
+        assertEquals("artifact-1", artifact.artifactId());
+        assertEquals("mixed-analysis", artifact.name());
+        assertEquals(1, artifact.parts().size());
+        Part<?> part = artifact.parts().get(0);
+        assertEquals(Part.Kind.TEXT, part.getKind());
+        assertEquals("Analyzed chart image and data: Bar chart showing quarterly data with values [10, 20, 30, 40].", ((TextPart) part).getText());
+        assertTrue(task.getMetadata().isEmpty());
     }
 }
