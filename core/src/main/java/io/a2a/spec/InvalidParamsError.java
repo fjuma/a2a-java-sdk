@@ -10,13 +10,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InvalidParamsError extends JSONRPCError {
+
+    public final static Integer DEFAULT_CODE = -32602;
+
     @JsonCreator
     public InvalidParamsError(
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32602),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "Invalid parameters"),
                 data);
     }

@@ -10,18 +10,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MethodNotFoundError extends JSONRPCError {
+
+    public final static Integer DEFAULT_CODE = -32601;
+
     @JsonCreator
     public MethodNotFoundError(
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32601),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "Method not found"),
                 data);
     }
 
     public MethodNotFoundError() {
-        this(-32601, null, null);
+        this(DEFAULT_CODE, null, null);
     }
 }

@@ -10,13 +10,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InternalError extends JSONRPCError {
+
+    public final static Integer DEFAULT_CODE = -32603;
+
     @JsonCreator
     public InternalError(
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32603),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "Internal Error"),
                 data);
     }
