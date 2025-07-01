@@ -38,6 +38,9 @@ public class JSONRPCHandler {
     private AgentCard agentCard;
     private RequestHandler requestHandler;
 
+    protected JSONRPCHandler() {
+    }
+
     @Inject
     public JSONRPCHandler(@PublicAgentCard AgentCard agentCard, RequestHandler requestHandler) {
         this.agentCard = agentCard;

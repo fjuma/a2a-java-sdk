@@ -184,7 +184,7 @@
         <module>sdk-quarkus</module>
         <module>sdk-spring</module>
         <module>tck</module>
-        <module>examples</module>
+        <module>examples/helloworld</module>
         <module>tests/server-common</module>
     </modules>
 </project>

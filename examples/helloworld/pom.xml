@@ -8,6 +8,7 @@
         <groupId>io.a2a.sdk</groupId>
         <artifactId>a2a-java-sdk-parent</artifactId>
         <version>0.2.4-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>a2a-java-sdk-examples-parent</artifactId>
