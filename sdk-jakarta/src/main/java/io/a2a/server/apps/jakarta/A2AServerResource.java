@@ -206,7 +206,10 @@ public class A2AServerResource {
     }
 
     @Provider
-    public class JsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {
+    public static class JsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {
+
+        public JsonParseExceptionMapper() {
+        }
 
         @Override
         public Response toResponse(JsonParseException exception) {
@@ -218,6 +221,9 @@ public class A2AServerResource {
 
     @Provider
     public static class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
+
+        public JsonMappingExceptionMapper(){
+        }
 
         @Override
         public Response toResponse(JsonMappingException exception) {
