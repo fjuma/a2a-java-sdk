@@ -14,7 +14,7 @@ This example demonstrates how to use the A2A Java SDK to communicate with an A2A
 The Java server can be started using `mvn` as follows:
 
 ```bash
-cd examples/server
+cd examples/helloworld/server
 mvn quarkus:dev
 ```
 

@@ -336,15 +336,27 @@ AgentCard agentCard = A2A.getAgentCard("http://localhost:1234");
 
 ## Additional Examples
 
-### Hello World Example
+### Hello World Client Example
 
-A complete example of an A2A client communicating with a Python A2A server is available in the [examples/helloworld](examples/helloworld) directory. This example demonstrates:
+A complete example of a Java A2A client communicating with a Python A2A server is available in the [examples/helloworld/client](examples/helloworld/client/README.md) directory. This example demonstrates:
 
 - Setting up and using the A2A Java client
-- Sending regular and streaming messages
-- Receiving and processing responses
+- Sending regular and streaming messages to a Python A2A server
+- Receiving and processing responses from the Python A2A server
 
-The example includes detailed instructions on how to run both the Python server and the Java client using JBang. Check out the [example's README](examples/helloworld/client/src/main/java/io/a2a/examples/helloworld/README.md) for more information.
+The example includes detailed instructions on how to run the Python A2A server and how to run the Java A2A client using JBang.
+
+Check out the [example's README](examples/helloworld/client/README.md) for more information.
+
+### Hello World Server Example
+
+A complete example of a Python A2A client communicating with a Java A2A server is available in the [examples/helloworld/server](examples/helloworld/server/README.md) directory. This example demonstrates:
+
+- A sample `AgentCard` producer
+- A sample `AgentExecutor` producer
+- A Java A2A server receiving regular and streaming messages from a Python A2A client
+
+Check out the [example's README](examples/helloworld/server/README.md) for more information.
 
 ## License
 
