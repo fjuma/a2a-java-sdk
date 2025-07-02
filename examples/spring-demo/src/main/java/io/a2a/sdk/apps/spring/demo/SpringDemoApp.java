@@ -1,4 +1,4 @@
-package io.a2a.sdk.apps.spring;
+package io.a2a.sdk.apps.spring.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

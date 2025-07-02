@@ -1,4 +1,4 @@
-package io.a2a.sdk.apps.spring;
+package io.a2a.sdk.apps.spring.demo.config;
 
 import io.a2a.server.PublicAgentCard;
 import io.a2a.server.agentexecution.AgentExecutor;
@@ -9,7 +9,7 @@ import io.a2a.spec.A2A;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.JSONRPCError;
-import jakarta.enterprise.inject.Produces;
+
 import java.util.Collections;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +45,6 @@ public class A2AServerConfig {
     }
 
     @Bean
-    @Produces
     public AgentExecutor agentExecutor() {
         return new AgentExecutor() {
             @Override
@@ -58,7 +57,7 @@ public class A2AServerConfig {
             public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
                 TaskUpdater taskUpdater = new TaskUpdater(context, eventQueue);
                 taskUpdater.cancel();
-            }
+            };
         };
     }
 }

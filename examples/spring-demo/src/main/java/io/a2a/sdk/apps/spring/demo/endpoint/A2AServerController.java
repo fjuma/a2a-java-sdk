@@ -1,4 +1,4 @@
-package io.a2a.sdk.apps.spring;
+package io.a2a.sdk.apps.spring.demo.endpoint;
 
 import jakarta.annotation.Resource;
 import java.util.concurrent.Flow;

@@ -21,6 +21,7 @@ logging:
 # A2A specific configuration
 a2a:
   server:
+    enabled: true
     id: "server-hello-world"
     name: "A2A Java Server"
     description: "A sample A2A agent implemented in Java"
