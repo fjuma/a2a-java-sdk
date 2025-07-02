@@ -186,5 +186,6 @@
         <module>tck</module>
         <module>examples/helloworld</module>
         <module>tests/server-common</module>
+        <module>examples/spring-demo</module>
     </modules>
 </project>

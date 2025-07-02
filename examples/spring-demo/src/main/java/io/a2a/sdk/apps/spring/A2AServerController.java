@@ -1,8 +1,6 @@
-package io.a2a.server.apps.spring;
+package io.a2a.sdk.apps.spring;
 
 import jakarta.annotation.Resource;
-import jakarta.inject.Inject;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import io.a2a.server.ExtendedAgentCard;
 import io.a2a.server.requesthandlers.JSONRPCHandler;

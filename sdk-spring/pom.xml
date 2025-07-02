@@ -13,8 +13,8 @@
 
     <packaging>jar</packaging>
 
-    <name>Java A2A SDK for Spring</name>
-    <description>Java SDK for the Agent2Agent Protocol (A2A) - SDK - Spring</description>
+    <name>Java A2A SDK Starter for Spring</name>
+    <description>Java SDK SpringBoot Starter for the Agent2Agent Protocol (A2A) - SDK - Spring</description>
 
     <properties>
         <spring-boot.version>3.2.0</spring-boot.version>
@@ -88,36 +88,29 @@
             <version>${project.version}</version>
         </dependency>
         
-        <!-- Spring Boot Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter</artifactId>
         </dependency>
-        
-        <!-- Spring Boot Starter WebFlux for SSE support -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
-        
-        <!-- Spring Boot Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        
-        <!-- Spring Boot Test WebFlux -->
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        
-        <!-- Rest Assured for testing -->
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
