@@ -58,9 +58,6 @@ public class A2AServerController {
     @Autowired(required = false)
     @ExtendedAgentCard
     private AgentCard extendedAgentCard;
-    
-    // Hook for testing to wait until streaming is subscribed
-    private static volatile Runnable streamingIsSubscribedRunnable;
 
     /**
      * Handles incoming POST requests to the main A2A endpoint.
@@ -174,11 +171,6 @@ public class A2AServerController {
                 @Override
                 public void onSubscribe(Flow.Subscription subscription) {
                     subscription.request(Long.MAX_VALUE);
-                    // Notify tests that we are subscribed
-                    Runnable runnable = streamingIsSubscribedRunnable;
-                    if (runnable != null) {
-                        runnable.run();
-                    }
                 }
 
                 @Override
