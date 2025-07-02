@@ -10,13 +10,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UnsupportedOperationError extends JSONRPCError {
+
+    public final static Integer DEFAULT_CODE = -32004;
+
     @JsonCreator
     public UnsupportedOperationError(
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32004),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "This operation is not supported"),
                 data);
     }

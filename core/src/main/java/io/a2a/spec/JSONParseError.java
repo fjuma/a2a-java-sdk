@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JSONParseError extends JSONRPCError implements A2AError {
 
+    public final static Integer DEFAULT_CODE = -32700;
+
     public JSONParseError() {
         this(null, null, null);
     }
@@ -25,7 +27,7 @@ public class JSONParseError extends JSONRPCError implements A2AError {
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32700),
+                defaultIfNull(code, DEFAULT_CODE),
                 defaultIfNull(message, "Invalid JSON payload"),
                 data);
     }
