@@ -1,17 +1,16 @@
 package io.a2a.server.apps.jakarta;
 
-import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
-import static io.a2a.spec.A2A.SEND_MESSAGE_METHOD;
-import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
-import static io.a2a.spec.A2A.SEND_TASK_RESUBSCRIPTION_METHOD;
-import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import io.a2a.spec.CancelTaskRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskRequest;
+import io.a2a.spec.SendMessageRequest;
+import io.a2a.spec.SendStreamingMessageRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.TaskResubscriptionRequest;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
@@ -50,16 +49,16 @@ public class A2ARequestFilter implements ContainerRequestFilter {
     }
 
     private static boolean isStreamingRequest(String requestBody) {
-        return requestBody.contains(SEND_STREAMING_MESSAGE_METHOD) ||
-               requestBody.contains(SEND_TASK_RESUBSCRIPTION_METHOD);
+        return requestBody.contains(SendStreamingMessageRequest.METHOD) ||
+               requestBody.contains(TaskResubscriptionRequest.METHOD);
     }
 
     private static boolean isNonStreamingRequest(String requestBody) {
-        return requestBody.contains(GET_TASK_METHOD) ||
-                requestBody.contains(CANCEL_TASK_METHOD) ||
-                requestBody.contains(SEND_MESSAGE_METHOD) ||
-                requestBody.contains(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD) ||
-                requestBody.contains(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
+        return requestBody.contains(GetTaskRequest.METHOD) ||
+                requestBody.contains(CancelTaskRequest.METHOD) ||
+                requestBody.contains(SendMessageRequest.METHOD) ||
+                requestBody.contains(SetTaskPushNotificationConfigRequest.METHOD) ||
+                requestBody.contains(GetTaskPushNotificationConfigRequest.METHOD);
     }
 
     private static void putAcceptHeader(ContainerRequestContext requestContext, String mediaType) {

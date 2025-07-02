@@ -18,7 +18,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import io.a2a.server.ExtendedAgentCard;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
-import io.a2a.spec.A2A;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
@@ -214,16 +213,16 @@ public class A2AServerRoutes {
     }
 
     private static boolean isStreamingRequest(String requestBody) {
-        return requestBody.contains(A2A.SEND_STREAMING_MESSAGE_METHOD) ||
-                requestBody.contains(A2A.SEND_TASK_RESUBSCRIPTION_METHOD);
+        return requestBody.contains(SendStreamingMessageRequest.METHOD) ||
+                requestBody.contains(TaskResubscriptionRequest.METHOD);
     }
 
     private static boolean isNonStreamingRequest(String requestBody) {
-        return requestBody.contains(A2A.GET_TASK_METHOD) ||
-                requestBody.contains(A2A.CANCEL_TASK_METHOD) ||
-                requestBody.contains(A2A.SEND_MESSAGE_METHOD) ||
-                requestBody.contains(A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD) ||
-                requestBody.contains(A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
+        return requestBody.contains(GetTaskRequest.METHOD) ||
+                requestBody.contains(CancelTaskRequest.METHOD) ||
+                requestBody.contains(SendMessageRequest.METHOD) ||
+                requestBody.contains(SetTaskPushNotificationConfigRequest.METHOD) ||
+                requestBody.contains(GetTaskPushNotificationConfigRequest.METHOD);
     }
 
     static void setStreamingMultiSseSupportSubscribedRunnable(Runnable runnable) {

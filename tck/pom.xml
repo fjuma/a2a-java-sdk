@@ -18,6 +18,11 @@
     <dependencies>
         <dependency>
             <groupId>io.a2a.sdk</groupId>
+            <artifactId>a2a-java-sdk-spec</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.a2a.sdk</groupId>
             <artifactId>a2a-java-sdk-server-quarkus</artifactId>
             <version>${project.version}</version>
         </dependency>

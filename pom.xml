@@ -184,9 +184,10 @@
     </build>
 
     <modules>
-
-        <module>core</module>
         <module>sdk-server-common</module>
+        <module>common</module>
+        <module>spec</module>
+        <module>client</module>
         <module>sdk-jakarta</module>
         <module>sdk-quarkus</module>
         <module>tck</module>

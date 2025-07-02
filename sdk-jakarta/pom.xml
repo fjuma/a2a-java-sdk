@@ -55,7 +55,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>a2a-java-sdk-core</artifactId>
+            <artifactId>a2a-java-sdk-spec</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
