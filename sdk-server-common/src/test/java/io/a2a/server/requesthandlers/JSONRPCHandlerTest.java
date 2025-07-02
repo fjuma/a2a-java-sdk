@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import io.a2a.spec.InternalError;
 import jakarta.enterprise.context.Dependent;
 
 import io.a2a.http.A2AHttpClient;
