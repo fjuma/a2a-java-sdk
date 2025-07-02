@@ -26,11 +26,11 @@ a2a:
     name: "A2A Java Server"
     description: "A sample A2A agent implemented in Java"
     version: "1.0.0"
-    url: "http://localhost:${server.port}/a2a/server"
+    url: "http://localhost:${server.port}/"
     provider:
-      name: "A2AP Team"
-      url: "https://github.com/a2ap"
-    documentationUrl: "https://github.com/a2ap/a2a4j"
+      name: "A2A"
+      url: "https://github.com/a2aproject/a2a-java"
+    documentationUrl: "https://github.com/a2aproject/a2a-java"
     capabilities:
       streaming: true
       pushNotifications: false
