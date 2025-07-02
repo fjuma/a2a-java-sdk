@@ -10,7 +10,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>spring-demo</artifactId>
+    <artifactId>spring-helloworld</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
