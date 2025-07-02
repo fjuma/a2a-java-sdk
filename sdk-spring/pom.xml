@@ -17,7 +17,7 @@
     <description>Java SDK SpringBoot Starter for the Agent2Agent Protocol (A2A) - SDK - Spring</description>
 
     <properties>
-        <spring-boot.version>3.2.0</spring-boot.version>
+        <spring-boot.version>3.4.5</spring-boot.version>
     </properties>
 
     <dependencyManagement>
