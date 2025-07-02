@@ -7,6 +7,7 @@ This module provides a Spring Boot adapter for the A2A (Agent2Agent) protocol, a
 - Complete JSON-RPC support
 - Server-Sent Events (SSE) streaming response support
 - Auto-configuration and Bean registration
+- Configuration-based Agent Card setup
 - Global exception handling
 - Seamless integration with Spring Boot
 
@@ -24,78 +25,121 @@ This module provides a Spring Boot adapter for the A2A (Agent2Agent) protocol, a
 
 ### 1. Add Dependencies
 
-Add the dependency to your Spring Boot project's `pom.xml`:
+Add the following dependencies to your Spring Boot project's `pom.xml`:
 
 ```xml
-<dependency>
-    <groupId>io.a2a.sdk</groupId>
-    <artifactId>a2a-java-sdk-server-spring</artifactId>
-    <version>0.2.4-SNAPSHOT</version>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.a2a.sdk</groupId>
+        <artifactId>a2a-java-sdk-server-spring</artifactId>
+        <version>0.2.4-SNAPSHOT</version>
+    </dependency>
+    
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+</dependencies>
 ```
 
-### 2. Configure Agent Card
+### 2. Configure Application Properties
 
-Create a configuration class to provide the Agent Card:
+Configure your A2A server in `application.yml`:
+
+```yaml
+server:
+  port: 8089
+
+spring:
+  application:
+    name: a2a-server
+
+# A2A specific configuration
+a2a:
+  server:
+    enabled: true
+    id: "my-agent-id"
+    name: "My A2A Agent"
+    description: "A sample A2A agent implemented in Java"
+    version: "1.0.0"
+    url: "http://localhost:${server.port}/"
+    provider:
+      name: "My Company"
+      url: "https://my-company.com"
+    documentationUrl: "https://my-company.com/docs"
+    capabilities:
+      streaming: true
+      pushNotifications: false
+      stateTransitionHistory: true
+    supportsAuthenticatedExtendedCard: true
+    defaultInputModes:
+      - "text"
+    defaultOutputModes:
+      - "text"
+    skills:
+      - name: "hello-world"
+        description: "A simple hello world skill"
+        tags:
+          - "greeting"
+          - "basic"
+        examples:
+          - "Say hello to me"
+          - "Greet me"
+        inputModes:
+          - "text"
+        outputModes:
+          - "text"
+```
+
+### 3. Implement Agent Logic
+
+Create a configuration class to provide the `AgentExecutor`:
 
 ```java
 @Configuration
-public class A2AConfiguration {
-    
+public class A2AServerConfig {
+
     @Bean
-    @PublicAgentCard
-    public AgentCard agentCard() {
-        return new AgentCard.Builder()
-            .name("My Agent")
-            .description("My A2A Agent")
-            .url("https://my-provider.com")
-            .version("1.0.0")
-            .capabilities(new AgentCapabilities.Builder()
-                .streaming(true)
-                .pushNotifications(true)
-                .stateTransitionHistory(true)
-                .build())
-            .defaultInputModes(Collections.singletonList("text"))
-            .defaultOutputModes(Collections.singletonList("text"))
-            .skills(Collections.emptyList())
-            .build();
+    public AgentExecutor agentExecutor() {
+        return new AgentExecutor() {
+            @Override
+            public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                // Echo the incoming message/task
+                eventQueue.enqueueEvent(context.getMessage() != null ? context.getMessage() : context.getTask());
+                // Send a response
+                eventQueue.enqueueEvent(A2A.toAgentMessage("Hello World"));
+            }
+
+            @Override
+            public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                TaskUpdater taskUpdater = new TaskUpdater(context, eventQueue);
+                taskUpdater.cancel();
+            }
+        };
     }
 }
 ```
 
-### 3. Implement RequestHandler
+### 4. Create Spring Boot Application
 
-Implement the `RequestHandler` interface to handle A2A requests:
+Create a main application class:
 
 ```java
-@Component
-public class MyRequestHandler implements RequestHandler {
-    
-    @Override
-    public EventKind onMessageSend(MessageSendParams params) {
-        // Handle message send request
-        return new Task.Builder()
-            .id("task-id")
-            .contextId("context-id")
-            .status(new TaskStatus(TaskState.WORKING))
-            .build();
+@SpringBootApplication
+public class A2AServerApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(A2AServerApplication.class, args);
     }
-    
-    @Override
-    public Task onGetTask(TaskQueryParams params) {
-        // Handle get task request
-        return new Task.Builder()
-            .id(params.id())
-            .contextId("context-id")
-            .status(new TaskStatus(TaskState.WORKING))
-            .build();
-    }
-    
-    // Implement other methods...
 }
 ```
 
-### 4. Start the Application
+### 5. Start the Application
 
 Start your Spring Boot application, and the A2A endpoints will be automatically available:
 
@@ -150,20 +194,271 @@ Tests include:
 
 ## Configuration Options
 
-You can configure through Spring Boot's `application.properties` or `application.yml`:
+The A2A Spring adapter supports comprehensive configuration through Spring Boot's `application.yml` or `application.properties`. Here are the available configuration options:
 
-```properties
-# Custom port (optional)
-server.port=8080
+### Basic Configuration
 
-# Enable WebFlux (for SSE support)
-spring.main.web-application-type=servlet
+```yaml
+a2a:
+  server:
+    enabled: true                    # Enable/disable A2A server
+    id: "my-agent-id"               # Unique agent identifier
+    name: "My Agent"                # Agent display name
+    description: "Agent description" # Agent description
+    version: "1.0.0"                # Agent version
+    url: "http://localhost:8080/"   # Agent base URL
 ```
 
-## Examples
+### Provider Information
 
-See the `examples` directory for complete example applications.
+```yaml
+a2a:
+  server:
+    provider:
+      name: "My Company"
+      url: "https://my-company.com"
+    documentationUrl: "https://my-company.com/docs"
+```
+
+### Capabilities
+
+```yaml
+a2a:
+  server:
+    capabilities:
+      streaming: true                 # Support streaming responses
+      pushNotifications: false        # Support push notifications
+      stateTransitionHistory: true    # Support state transition history
+    supportsAuthenticatedExtendedCard: true  # Support authenticated extended card
+```
+
+### Input/Output Modes
+
+```yaml
+a2a:
+  server:
+    defaultInputModes:
+      - "text"
+      - "json"
+    defaultOutputModes:
+      - "text"
+      - "json"
+```
+
+### Skills Configuration
+
+```yaml
+a2a:
+  server:
+    skills:
+      - name: "skill-name"
+        description: "Skill description"
+        tags:
+          - "tag1"
+          - "tag2"
+        examples:
+          - "Example usage 1"
+          - "Example usage 2"
+        inputModes:
+          - "text"
+        outputModes:
+          - "text"
+```
+
+### Server Configuration
+
+```yaml
+server:
+  port: 8080                        # Custom port (optional)
+
+spring:
+  main:
+    web-application-type: servlet     # Use servlet stack (required for SSE)
+```
+
+## Complete Example
+
+Here's a complete example of a simple A2A agent:
+
+### Project Structure
+
+```
+src/
+├── main/
+│   ├── java/
+│   │   └── com/example/
+│   │       ├── A2AServerApplication.java
+│   │       └── config/
+│   │           └── A2AServerConfig.java
+│   └── resources/
+│       └── application.yml
+└── pom.xml
+```
+
+### pom.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.example</groupId>
+    <artifactId>my-a2a-agent</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.5</version>
+        <relativePath/>
+    </parent>
+    
+    <dependencies>
+        <dependency>
+            <groupId>io.a2a.sdk</groupId>
+            <artifactId>a2a-java-sdk-server-spring</artifactId>
+            <version>0.2.4-SNAPSHOT</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```
+
+### A2AServerApplication.java
+
+```java
+package com.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class A2AServerApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(A2AServerApplication.class, args);
+    }
+}
+```
+
+### A2AServerConfig.java
+
+```java
+package com.example.config;
+
+import io.a2a.server.agentexecution.AgentExecutor;
+import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.events.EventQueue;
+import io.a2a.server.tasks.TaskUpdater;
+import io.a2a.spec.A2A;
+import io.a2a.spec.JSONRPCError;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class A2AServerConfig {
+
+    @Bean
+    public AgentExecutor agentExecutor() {
+        return new AgentExecutor() {
+            @Override
+            public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                // Echo the incoming message/task
+                eventQueue.enqueueEvent(context.getMessage() != null ? context.getMessage() : context.getTask());
+                // Send a response
+                eventQueue.enqueueEvent(A2A.toAgentMessage("Hello from A2A Agent!"));
+            }
+
+            @Override
+            public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                TaskUpdater taskUpdater = new TaskUpdater(context, eventQueue);
+                taskUpdater.cancel();
+            }
+        };
+    }
+}
+```
+
+### application.yml
+
+```yaml
+server:
+  port: 8089
+
+spring:
+  application:
+    name: my-a2a-agent
+
+a2a:
+  server:
+    enabled: true
+    id: "my-agent-id"
+    name: "My A2A Agent"
+    description: "A sample A2A agent implemented in Java"
+    version: "1.0.0"
+    url: "http://localhost:${server.port}/"
+    provider:
+      name: "My Company"
+      url: "https://my-company.com"
+    documentationUrl: "https://my-company.com/docs"
+    capabilities:
+      streaming: true
+      pushNotifications: false
+      stateTransitionHistory: true
+    supportsAuthenticatedExtendedCard: true
+    defaultInputModes:
+      - "text"
+    defaultOutputModes:
+      - "text"
+    skills:
+      - name: "hello-world"
+        description: "A simple hello world skill"
+        tags:
+          - "greeting"
+          - "basic"
+        examples:
+          - "Say hello to me"
+          - "Greet me"
+        inputModes:
+          - "text"
+        outputModes:
+          - "text"
+```
+
+### Running the Application
+
+1. Build the project: `mvn clean package`
+2. Run the application: `java -jar target/my-a2a-agent-1.0.0.jar`
+3. Test the endpoints:
+   - Agent Card: `curl http://localhost:8089/.well-known/agent.json`
+   - Send Message: `curl -X POST http://localhost:8089/ -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"a2a.sendMessage","params":{"message":{"content":"Hello"}},"id":1}'`
+
+## Additional Examples
+
+See the `examples/spring-helloworld` directory for a complete working example application.
 
 ## License
 
-This project is licensed under the Apache License 2.0. 
+This project is licensed under the Apache License 2.0.
