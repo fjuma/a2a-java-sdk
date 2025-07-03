@@ -6,10 +6,10 @@ import java.util.concurrent.Executors;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Singleton;
 
-@Singleton
+@ApplicationScoped
 public class AsyncExecutorProducer {
 
     private ExecutorService executor;

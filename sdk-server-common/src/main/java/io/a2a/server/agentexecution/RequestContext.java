@@ -1,6 +1,7 @@
 package io.a2a.server.agentexecution;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,12 +32,12 @@ public class RequestContext {
 
         // if the taskId and contextId were specified, they must match the params
         if (params != null) {
-            if (taskId != null && ! params.message().getTaskId().equals(taskId)) {
+            if (taskId != null && !taskId.equals(params.message().getTaskId())) {
                 throw new InvalidParamsError("bad task id");
             } else {
                 checkOrGenerateTaskId();
             }
-            if (contextId != null && ! params.message().getContextId().equals(contextId)) {
+            if (contextId != null && !contextId.equals(params.message().getContextId())) {
                 throw new InvalidParamsError("bad context id");
             } else {
                 checkOrGenerateContextId();
@@ -61,7 +62,7 @@ public class RequestContext {
     }
 
     public List<Task> getRelatedTasks() {
-        return relatedTasks;
+        return Collections.unmodifiableList(relatedTasks);
     }
 
     public Message getMessage() {

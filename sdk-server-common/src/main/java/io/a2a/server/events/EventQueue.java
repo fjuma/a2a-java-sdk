@@ -5,6 +5,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -13,13 +15,17 @@ import io.a2a.spec.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class EventQueue {
+public abstract class EventQueue implements AutoCloseable {
 
     private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(EventQueue.class));
 
+    // TODO decide on a capacity
+    private static final int queueSize = 1000;
+
     private final EventQueue parent;
-    // TODO decide on a capacity (or more appropriate queue data structures)
-    private final BlockingQueue<Event> queue = new ArrayBlockingQueue<Event>(1000);
+
+    private final BlockingQueue<Event> queue = new LinkedBlockingDeque<>();
+    private final Semaphore semaphore = new Semaphore(queueSize, true);
     private volatile boolean closed = false;
 
 
@@ -47,6 +53,12 @@ public abstract class EventQueue {
             return;
         }
         // Call toString() since for errors we don't really want the full stacktrace
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Unable to acquire the semaphore to enqueue the event", e);
+        }
         queue.add(event);
         log.debug("Enqueued event {} {}", event instanceof Throwable ? event.toString() : event, this);
     }
@@ -64,6 +76,7 @@ public abstract class EventQueue {
                 if (event != null) {
                     // Call toString() since for errors we don't really want the full stacktrace
                     log.debug("Dequeued event (no wait) {} {}", this, event instanceof Throwable ? event.toString() : event);
+                    semaphore.release();
                 }
                 return event;
             }
@@ -72,6 +85,7 @@ public abstract class EventQueue {
                 if (event != null) {
                     // Call toString() since for errors we don't really want the full stacktrace
                     log.debug("Dequeued event (waiting) {} {}", this, event instanceof Throwable ? event.toString() : event);
+                    semaphore.release();
                 }
                 return event;
             } catch (InterruptedException e) {

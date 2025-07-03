@@ -62,7 +62,7 @@ A JBang script is provided in the example directory to make running the client e
 
 2. Navigate to the example directory:
    ```bash
-   cd examples/client/src/main/java/io/a2a/examples/helloworld
+   cd examples/helloworld/client/src/main/java/io/a2a/examples/helloworld/
    ```
 
 3. Run the client using the JBang script:

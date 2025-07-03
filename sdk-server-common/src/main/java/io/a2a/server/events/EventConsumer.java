@@ -67,9 +67,9 @@ public class EventConsumer {
                         completed = true;
                         tube.complete();
                         return;
-                    } catch (Exception e) {
-                        // Continue polling until there is a final event
-                        continue;
+                    } catch (Throwable t) {
+                        tube.fail(t);
+                        return;
                     }
 
                     boolean isFinalEvent = false;

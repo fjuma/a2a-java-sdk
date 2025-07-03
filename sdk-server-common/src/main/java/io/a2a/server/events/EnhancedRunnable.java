@@ -2,10 +2,11 @@ package io.a2a.server.events;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class EnhancedRunnable implements Runnable {
     private volatile Throwable error;
-    private final List<DoneCallback> doneCallbacks = new ArrayList<>();
+    private final List<DoneCallback> doneCallbacks = new CopyOnWriteArrayList<>();
 
     public Throwable getError() {
         return error;
@@ -16,16 +17,12 @@ public abstract class EnhancedRunnable implements Runnable {
     }
 
     public void addDoneCallback(DoneCallback doneCallback) {
-        synchronized (doneCallbacks) {
-            doneCallbacks.add(doneCallback);
-        }
+        doneCallbacks.add(doneCallback);
     }
 
     public void invokeDoneCallbacks() {
-        synchronized (doneCallbacks) {
-            for (DoneCallback doneCallback : doneCallbacks) {
-                doneCallback.done(this);
-            }
+        for (DoneCallback doneCallback : doneCallbacks) {
+            doneCallback.done(this);
         }
     }
 

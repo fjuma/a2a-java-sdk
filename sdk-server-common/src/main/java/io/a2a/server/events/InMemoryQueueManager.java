@@ -3,20 +3,20 @@ package io.a2a.server.events;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class InMemoryQueueManager implements QueueManager {
-    private final Map<String, EventQueue> queues = Collections.synchronizedMap(new HashMap<>());
+    private final ConcurrentMap<String, EventQueue> queues = new ConcurrentHashMap<>();
 
     @Override
     public void add(String taskId, EventQueue queue) {
-        synchronized (queues) {
-            if (queues.containsKey(taskId)) {
-                throw new TaskQueueExistsException();
-            }
-            queues.put(taskId, queue);
+        EventQueue existing = queues.putIfAbsent(taskId, queue);
+        if (existing != null) {
+            throw new TaskQueueExistsException();
         }
     }
 
@@ -27,36 +27,29 @@ public class InMemoryQueueManager implements QueueManager {
 
     @Override
     public EventQueue tap(String taskId) {
-        synchronized (taskId) {
-            EventQueue queue = queues.get(taskId);
-            if (queue == null) {
-                return queue;
-            }
-            return queue.tap();
-        }
+        EventQueue queue = queues.get(taskId);
+        return queue == null ? null : queue.tap();
     }
 
     @Override
     public void close(String taskId) {
-        synchronized (queues) {
-            EventQueue existing = queues.remove(taskId);
-            if (existing == null) {
-                throw new NoTaskQueueException();
-            }
+        EventQueue existing = queues.remove(taskId);
+        if (existing == null) {
+            throw new NoTaskQueueException();
         }
     }
 
     @Override
     public EventQueue createOrTap(String taskId) {
-        synchronized (queues) {
-            EventQueue queue = queues.get(taskId);
-            if (queue != null) {
-                return queue.tap();
-            }
-            queue = EventQueue.create();
-            queues.put(taskId, queue);
-            return queue;
+
+        EventQueue existing = queues.get(taskId);
+        EventQueue newQueue = null;
+        if (existing == null) {
+            newQueue = EventQueue.create();
+            // Make sure an existing queue has not been added in the meantime
+            existing = queues.putIfAbsent(taskId, newQueue);
         }
+        return existing == null ? newQueue : existing.tap();
     }
 
     @Override

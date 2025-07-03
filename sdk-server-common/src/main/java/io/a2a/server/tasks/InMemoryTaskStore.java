@@ -3,6 +3,8 @@ package io.a2a.server.tasks;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -11,7 +13,7 @@ import io.a2a.spec.Task;
 @ApplicationScoped
 public class InMemoryTaskStore implements TaskStore {
 
-    private final Map<String, Task> tasks = Collections.synchronizedMap(new HashMap<>());
+    private final ConcurrentMap<String, Task> tasks = new ConcurrentHashMap<>();
 
     @Override
     public void save(Task task) {
