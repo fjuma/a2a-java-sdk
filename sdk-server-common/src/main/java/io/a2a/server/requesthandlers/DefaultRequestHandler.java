@@ -162,8 +162,9 @@ public class DefaultRequestHandler implements RequestHandler {
         ResultAggregator.EventTypeAndInterrupt etai = null;
         try {
             EventConsumer consumer = new EventConsumer(queue);
-            etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
             producerRunnable.addDoneCallback(consumer.createAgentRunnableDoneCallback());
+            etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
+            
             if (etai == null) {
                 log.debug("No result, throwing InternalError");
                 throw new InternalError("No result");
