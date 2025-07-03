@@ -4,7 +4,7 @@ Here are some articles and videos from the community that you may find helpful.
 
 ## General Agent and A2A Introduction
 
-*   [Agents are not tools](https://www.googlecloudcommunity.com/gc/Community-Blogs/Agents-are-not-tools/ba-p/922716): A nice explanation of what agents are from one of the main contributor of A2A spec.
+*   [Agents are not tools](https://www.googlecloudcommunity.com/gc/Community-Blogs/Agents-are-not-tools/ba-p/922716): A nice explanation of what agents are from one of the main contributors of A2A spec.
 *   [Introducing A2A](https://goo.gle/a2a-video): A good video introducing A2A.
 
 ## A2A Java SDK Specific
