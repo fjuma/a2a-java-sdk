@@ -162,6 +162,9 @@ public class DefaultRequestHandler implements RequestHandler {
         ResultAggregator.EventTypeAndInterrupt etai = null;
         try {
             EventConsumer consumer = new EventConsumer(queue);
+
+            // This callback must be added before we start consuming. Otherwise,
+            // any errors thrown by the producerRunnable are not picked up by the consumer
             producerRunnable.addDoneCallback(consumer.createAgentRunnableDoneCallback());
             etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
             
@@ -204,8 +207,9 @@ public class DefaultRequestHandler implements RequestHandler {
         try {
             EventConsumer consumer = new EventConsumer(queue);
 
+            // This callback must be added before we start consuming. Otherwise,
+            // any errors thrown by the producerRunnable are not picked up by the consumer
             producerRunnable.addDoneCallback(consumer.createAgentRunnableDoneCallback());
-
             Flow.Publisher<Event> results = resultAggregator.consumeAndEmit(consumer);
 
             Flow.Publisher<Event> eventPublisher =
