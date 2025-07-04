@@ -358,6 +358,10 @@ A complete example of a Python A2A client communicating with a Java A2A server i
 
 Check out the [example's README](examples/helloworld/server/README.md) for more information.
 
+## Community Articles
+
+See [COMMUNITY_ARTICLES.md](COMMUNITY_ARTICLES.md) for a list of community articles and videos.
+
 ## License
 
 This project is licensed under the terms of the [Apache 2.0 License](LICENSE).
