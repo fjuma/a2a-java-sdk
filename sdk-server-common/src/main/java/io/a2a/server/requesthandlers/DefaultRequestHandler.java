@@ -31,7 +31,6 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
-import io.a2a.server.util.TempLoggerWrapper;
 import io.a2a.server.util.async.Internal;
 import io.a2a.spec.Event;
 import io.a2a.spec.EventKind;
@@ -53,7 +52,7 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class DefaultRequestHandler implements RequestHandler {
 
-    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(DefaultRequestHandler.class));
+    private static final Logger log = LoggerFactory.getLogger(DefaultRequestHandler.class);
 
     private final AgentExecutor agentExecutor;
     private final TaskStore taskStore;
