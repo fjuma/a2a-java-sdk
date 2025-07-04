@@ -21,5 +21,5 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
+    - name: Build with Maven and run tests
       run: mvn -B package --file pom.xml -fae
