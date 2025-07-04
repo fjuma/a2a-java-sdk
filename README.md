@@ -34,7 +34,7 @@ The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A)
 - [Add a class that creates an A2A Agent Executor](#3-add-a-class-that-creates-an-a2a-agent-executor)
 - [Add an A2A Java SDK Server Maven dependency to your project](#4-add-an-a2a-java-sdk-server-maven-dependency-to-your-project)
 
-### 1. Add the A2A Java SDK Core Maven dependency to your project
+### 1. Add the A2A Java SDK Maven dependencies to your project
 
 > **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
 > sure to check out the latest tag (you can see the tags [here](https://github.com/a2aproject/a2a-java/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
@@ -42,7 +42,12 @@ The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A)
 ```xml
 <dependency>
     <groupId>io.a2a.sdk</groupId>
-    <artifactId>a2a-java-sdk-core</artifactId>
+    <artifactId>a2a-java-sdk-client</artifactId>
+    <version>0.2.3</version>
+</dependency>
+<dependency>
+    <groupId>io.a2a.sdk</groupId>
+    <artifactId>a2a-java-sdk-server-common</artifactId>
     <version>0.2.3</version>
 </dependency>
 ```

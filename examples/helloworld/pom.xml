@@ -28,7 +28,7 @@
             </dependency>
             <dependency>
                 <groupId>io.a2a.sdk</groupId>
-                <artifactId>a2a-java-sdk-core</artifactId>
+                <artifactId>a2a-java-sdk-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
