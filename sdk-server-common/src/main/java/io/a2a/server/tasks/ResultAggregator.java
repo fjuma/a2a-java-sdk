@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.a2a.server.events.EventConsumer;
-import io.a2a.server.util.TempLoggerWrapper;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.Event;
 import io.a2a.spec.EventKind;
@@ -23,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ResultAggregator {
-    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(ResultAggregator.class));
+    private static final Logger log = LoggerFactory.getLogger(ResultAggregator.class);
 
     private final TaskManager taskManager;
     private volatile Message message;

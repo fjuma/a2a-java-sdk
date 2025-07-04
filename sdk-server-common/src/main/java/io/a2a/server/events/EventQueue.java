@@ -8,14 +8,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.a2a.server.util.TempLoggerWrapper;
 import io.a2a.spec.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class EventQueue {
 
-    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(EventQueue.class));
+    private static final Logger log = LoggerFactory.getLogger(EventQueue.class);
 
     private final EventQueue parent;
     // TODO decide on a capacity (or more appropriate queue data structures)
