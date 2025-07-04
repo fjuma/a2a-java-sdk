@@ -29,6 +29,7 @@
         <quarkus.platform.version>3.22.3</quarkus.platform.version>
         <rest-assured.version>5.5.1</rest-assured.version>
         <slf4j.version>2.0.17</slf4j.version>
+        <slf4j-jdk14.version>2.0.17</slf4j-jdk14.version>
 
         <!-- Redirect test output to file -->
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -114,7 +115,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-jdk14</artifactId>
-                <version>2.0.17</version>
+                <version>${slf4j-jdk14.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -144,6 +145,7 @@
                     <configuration>
                         <systemPropertyVariables>
                             <maven.home>${maven.home}</maven.home>
+                            <java.util.logging.config.file>${project.basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
