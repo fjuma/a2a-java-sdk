@@ -9,23 +9,23 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.JdkA2AHttpClient;
+import io.a2a.transport.Transport;
+import io.a2a.http.JdkHttpTransport;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.Task;
 import io.a2a.util.Utils;
 
 @ApplicationScoped
 public class InMemoryPushNotifier implements PushNotifier {
-    private final A2AHttpClient httpClient;
+    private final Transport httpClient;
     private final Map<String, PushNotificationConfig> pushNotificationInfos = Collections.synchronizedMap(new HashMap<>());
 
     @Inject
     public InMemoryPushNotifier() {
-        this.httpClient = new JdkA2AHttpClient();
+        this.httpClient = new JdkHttpTransport();
     }
 
-    public InMemoryPushNotifier(A2AHttpClient httpClient) {
+    public InMemoryPushNotifier(Transport httpClient) {
         this.httpClient = httpClient;
     }
 
@@ -66,11 +66,8 @@ public class InMemoryPushNotifier implements PushNotifier {
         }
 
         try {
-            httpClient.createPost()
-                    .url(url)
-                    .body(body)
-                    .post();
-        } catch (IOException | InterruptedException e) {
+            httpClient.request(url, body);
+        } catch (Exception e) {
             throw new RuntimeException("Error pushing data to " + url + ": " + e.getMessage(), e);
         }
 

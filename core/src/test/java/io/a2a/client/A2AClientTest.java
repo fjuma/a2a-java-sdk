@@ -1,106 +1,72 @@
 package io.a2a.client;
 
-import static io.a2a.client.JsonMessages.AGENT_CARD;
-import static io.a2a.client.JsonMessages.AUTHENTICATION_EXTENDED_AGENT_CARD;
-import static io.a2a.client.JsonMessages.CANCEL_TASK_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.CANCEL_TASK_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.GET_TASK_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.GET_TASK_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_ERROR_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_ERROR_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_FILE_PART_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_FILE_PART_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_DATA_PART_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_DATA_PART_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_MIXED_PARTS_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_MIXED_PARTS_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.a2a.spec.*;
+import io.a2a.transport.Transport;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockserver.integration.ClientAndServer;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-import io.a2a.spec.A2AServerException;
-import io.a2a.spec.AgentCard;
-import io.a2a.spec.AgentSkill;
-import io.a2a.spec.Artifact;
-import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.DataPart;
-import io.a2a.spec.FileContent;
-import io.a2a.spec.FilePart;
-import io.a2a.spec.FileWithBytes;
-import io.a2a.spec.FileWithUri;
-import io.a2a.spec.GetTaskPushNotificationConfigResponse;
-import io.a2a.spec.GetTaskResponse;
-import io.a2a.spec.Message;
-import io.a2a.spec.MessageSendConfiguration;
-import io.a2a.spec.MessageSendParams;
-import io.a2a.spec.OpenIdConnectSecurityScheme;
-import io.a2a.spec.Part;
-import io.a2a.spec.PushNotificationAuthenticationInfo;
-import io.a2a.spec.PushNotificationConfig;
-import io.a2a.spec.SecurityScheme;
-import io.a2a.spec.SendMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationConfigResponse;
-import io.a2a.spec.Task;
-import io.a2a.spec.TaskIdParams;
-import io.a2a.spec.TaskPushNotificationConfig;
-import io.a2a.spec.TaskQueryParams;
-import io.a2a.spec.TaskState;
-import io.a2a.spec.TextPart;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.matchers.MatchType;
-import org.mockserver.model.JsonBody;
+import static io.a2a.client.JsonMessages.*;
+import static io.a2a.util.Utils.OBJECT_MAPPER;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 
 public class A2AClientTest {
 
-    private ClientAndServer server;
+    @Mock
+    private Transport transport;
+
+    private A2AClient client;
 
     @BeforeEach
     public void setUp() {
-        server = new ClientAndServer(4001);
+        MockitoAnnotations.openMocks(this);
+        client = new A2AClient("http://localhost:4001", transport);
     }
 
-    @AfterEach
-    public void tearDown() {
-        server.stop();
+    private <T> T fromJson(String json, Class<T> clazz) throws JsonProcessingException {
+        return OBJECT_MAPPER.readValue(json, clazz);
     }
 
     @Test
     public void testA2AClientSendMessage() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SEND_MESSAGE_TEST_REQUEST, MatchType.STRICT))
+        SendMessageRequest request = fromJson(SEND_MESSAGE_TEST_REQUEST, SendMessageRequest.class);
+        when(transport.request(anyString(), anyString())).thenAnswer(invocation -> {
+            String requestBody = invocation.getArgument(1);
+            if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SEND_MESSAGE_TEST_REQUEST, SendMessageRequest.class)))) {
+                return CompletableFuture.completedFuture(SEND_MESSAGE_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE, SendMessageRequest.class)))) {
+                return CompletableFuture.completedFuture(SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SEND_MESSAGE_WITH_ERROR_TEST_REQUEST, SendMessageRequest.class)))) {
+                return CompletableFuture.completedFuture(SEND_MESSAGE_ERROR_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(GET_TASK_TEST_REQUEST, GetTaskRequest.class)))) {
+                return CompletableFuture.completedFuture(GET_TASK_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(CANCEL_TASK_TEST_REQUEST, CancelTaskRequest.class)))) {
+                return CompletableFuture.completedFuture(CANCEL_TASK_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, GetTaskPushNotificationConfigRequest.class)))) {
+                return CompletableFuture.completedFuture(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, SetTaskPushNotificationConfigRequest.class)))) {
+                return CompletableFuture.completedFuture(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SEND_MESSAGE_WITH_FILE_PART_TEST_REQUEST, SendMessageRequest.class)))) {
+                return CompletableFuture.completedFuture(SEND_MESSAGE_WITH_FILE_PART_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SEND_MESSAGE_WITH_DATA_PART_TEST_REQUEST, SendMessageRequest.class)))) {
+                return CompletableFuture.completedFuture(SEND_MESSAGE_WITH_DATA_PART_TEST_RESPONSE);
+            } else if (requestBody.equals(OBJECT_MAPPER.writeValueAsString(fromJson(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_REQUEST, SendMessageRequest.class)))) {
+                return CompletableFuture.completedFuture(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_RESPONSE);
+            }
+            return CompletableFuture.completedFuture("");
+        });
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SEND_MESSAGE_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         Message message = new Message.Builder()
                 .role(Message.Role.USER)
                 .parts(Collections.singletonList(new TextPart("tell me a joke")))
@@ -139,20 +105,10 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientSendMessageWithMessageResponse() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE, MatchType.STRICT))
+        SendMessageRequest request = fromJson(SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE, SendMessageRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         Message message = new Message.Builder()
                 .role(Message.Role.USER)
                 .parts(Collections.singletonList(new TextPart("tell me a joke")))
@@ -185,20 +141,10 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientSendMessageWithError() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_ERROR_TEST_REQUEST, MatchType.STRICT))
+        SendMessageRequest request = fromJson(SEND_MESSAGE_WITH_ERROR_TEST_REQUEST, SendMessageRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(SEND_MESSAGE_ERROR_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SEND_MESSAGE_ERROR_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         Message message = new Message.Builder()
                 .role(Message.Role.USER)
                 .parts(Collections.singletonList(new TextPart("tell me a joke")))
@@ -224,20 +170,10 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientGetTask() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(GET_TASK_TEST_REQUEST, MatchType.STRICT))
+        GetTaskRequest request = fromJson(GET_TASK_TEST_REQUEST, GetTaskRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(GET_TASK_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(GET_TASK_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         GetTaskResponse response = client.getTask("request-1234",
                 new TaskQueryParams("de38c76d-d54c-436c-8b9f-4c2703648d64", 10));
 
@@ -283,20 +219,10 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientCancelTask() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(CANCEL_TASK_TEST_REQUEST, MatchType.STRICT))
+        CancelTaskRequest request = fromJson(CANCEL_TASK_TEST_REQUEST, CancelTaskRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(CANCEL_TASK_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(CANCEL_TASK_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         CancelTaskResponse response = client.cancelTask("request-1234",
                 new TaskIdParams("de38c76d-d54c-436c-8b9f-4c2703648d64", new HashMap<>()));
 
@@ -313,20 +239,10 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientGetTaskPushNotificationConfig() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
+        GetTaskPushNotificationConfigRequest request = fromJson(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, GetTaskPushNotificationConfigRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("1",
                 new TaskIdParams("de38c76d-d54c-436c-8b9f-4c2703648d64", new HashMap<>()));
         assertEquals("2.0", response.getJsonrpc());
@@ -343,20 +259,10 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientSetTaskPushNotificationConfig() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
+        SetTaskPushNotificationConfigRequest request = fromJson(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, SetTaskPushNotificationConfigRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         SetTaskPushNotificationConfigResponse response = client.setTaskPushNotificationConfig("1",
                 "de38c76d-d54c-436c-8b9f-4c2703648d64",
                 new PushNotificationConfig.Builder()
@@ -375,163 +281,12 @@ public class A2AClientTest {
         assertEquals("jwt", authenticationInfo.schemes().get(0));
     }
 
-
-    @Test
-    public void testA2AClientGetAgentCard() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("GET")
-                                .withPath("/.well-known/agent.json")
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(AGENT_CARD)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
-        AgentCard agentCard = client.getAgentCard();
-        assertEquals("GeoSpatial Route Planner Agent", agentCard.name());
-        assertEquals("Provides advanced route planning, traffic analysis, and custom map generation services. This agent can calculate optimal routes, estimate travel times considering real-time traffic, and create personalized maps with points of interest.", agentCard.description());
-        assertEquals("https://georoute-agent.example.com/a2a/v1", agentCard.url());
-        assertEquals("Example Geo Services Inc.", agentCard.provider().organization());
-        assertEquals("https://www.examplegeoservices.com", agentCard.provider().url());
-        assertEquals("1.2.0", agentCard.version());
-        assertEquals("https://docs.examplegeoservices.com/georoute-agent/api", agentCard.documentationUrl());
-        assertTrue(agentCard.capabilities().streaming());
-        assertTrue(agentCard.capabilities().pushNotifications());
-        assertFalse(agentCard.capabilities().stateTransitionHistory());
-        Map<String, SecurityScheme> securitySchemes = agentCard.securitySchemes();
-        assertNotNull(securitySchemes);
-        OpenIdConnectSecurityScheme google = (OpenIdConnectSecurityScheme) securitySchemes.get("google");
-        assertEquals("openIdConnect", google.getType());
-        assertEquals("https://accounts.google.com/.well-known/openid-configuration", google.getOpenIdConnectUrl());
-        List<Map<String, List<String>>> security = agentCard.security();
-        assertEquals(1, security.size());
-        Map<String, List<String>> securityMap = security.get(0);
-        List<String> scopes = securityMap.get("google");
-        List<String> expectedScopes = List.of("openid", "profile", "email");
-        assertEquals(expectedScopes, scopes);
-        List<String> defaultInputModes = List.of("application/json", "text/plain");
-        assertEquals(defaultInputModes, agentCard.defaultInputModes());
-        List<String> defaultOutputModes = List.of("application/json", "image/png");
-        assertEquals(defaultOutputModes, agentCard.defaultOutputModes());
-        List<AgentSkill> skills = agentCard.skills();
-        assertEquals("route-optimizer-traffic", skills.get(0).id());
-        assertEquals("Traffic-Aware Route Optimizer", skills.get(0).name());
-        assertEquals("Calculates the optimal driving route between two or more locations, taking into account real-time traffic conditions, road closures, and user preferences (e.g., avoid tolls, prefer highways).", skills.get(0).description());
-        List<String> tags = List.of("maps", "routing", "navigation", "directions", "traffic");
-        assertEquals(tags, skills.get(0).tags());
-        List<String> examples = List.of("Plan a route from '1600 Amphitheatre Parkway, Mountain View, CA' to 'San Francisco International Airport' avoiding tolls.",
-                "{\"origin\": {\"lat\": 37.422, \"lng\": -122.084}, \"destination\": {\"lat\": 37.7749, \"lng\": -122.4194}, \"preferences\": [\"avoid_ferries\"]}");
-        assertEquals(examples, skills.get(0).examples());
-        assertEquals(defaultInputModes, skills.get(0).inputModes());
-        List<String> outputModes = List.of("application/json", "application/vnd.geo+json", "text/html");
-        assertEquals(outputModes, skills.get(0).outputModes());
-        assertEquals("custom-map-generator", skills.get(1).id());
-        assertEquals("Personalized Map Generator", skills.get(1).name());
-        assertEquals("Creates custom map images or interactive map views based on user-defined points of interest, routes, and style preferences. Can overlay data layers.", skills.get(1).description());
-        tags = List.of("maps", "customization", "visualization", "cartography");
-        assertEquals(tags, skills.get(1).tags());
-        examples = List.of("Generate a map of my upcoming road trip with all planned stops highlighted.",
-                "Show me a map visualizing all coffee shops within a 1-mile radius of my current location.");
-        assertEquals(examples, skills.get(1).examples());
-        List<String> inputModes = List.of("application/json");
-        assertEquals(inputModes, skills.get(1).inputModes());
-        outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
-        assertEquals(outputModes, skills.get(1).outputModes());
-        assertTrue(agentCard.supportsAuthenticatedExtendedCard());
-        assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
-    }
-
-    @Test
-    public void testA2AClientGetAuthenticatedExtendedAgentCard() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("GET")
-                                .withPath("/agent/authenticatedExtendedCard")
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(AUTHENTICATION_EXTENDED_AGENT_CARD)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
-        AgentCard agentCard = client.getAgentCard("/agent/authenticatedExtendedCard", null);
-        assertEquals("GeoSpatial Route Planner Agent Extended", agentCard.name());
-        assertEquals("Extended description", agentCard.description());
-        assertEquals("https://georoute-agent.example.com/a2a/v1", agentCard.url());
-        assertEquals("Example Geo Services Inc.", agentCard.provider().organization());
-        assertEquals("https://www.examplegeoservices.com", agentCard.provider().url());
-        assertEquals("1.2.0", agentCard.version());
-        assertEquals("https://docs.examplegeoservices.com/georoute-agent/api", agentCard.documentationUrl());
-        assertTrue(agentCard.capabilities().streaming());
-        assertTrue(agentCard.capabilities().pushNotifications());
-        assertFalse(agentCard.capabilities().stateTransitionHistory());
-        Map<String, SecurityScheme> securitySchemes = agentCard.securitySchemes();
-        assertNotNull(securitySchemes);
-        OpenIdConnectSecurityScheme google = (OpenIdConnectSecurityScheme) securitySchemes.get("google");
-        assertEquals("openIdConnect", google.getType());
-        assertEquals("https://accounts.google.com/.well-known/openid-configuration", google.getOpenIdConnectUrl());
-        List<Map<String, List<String>>> security = agentCard.security();
-        assertEquals(1, security.size());
-        Map<String, List<String>> securityMap = security.get(0);
-        List<String> scopes = securityMap.get("google");
-        List<String> expectedScopes = List.of("openid", "profile", "email");
-        assertEquals(expectedScopes, scopes);
-        List<String> defaultInputModes = List.of("application/json", "text/plain");
-        assertEquals(defaultInputModes, agentCard.defaultInputModes());
-        List<String> defaultOutputModes = List.of("application/json", "image/png");
-        assertEquals(defaultOutputModes, agentCard.defaultOutputModes());
-        List<AgentSkill> skills = agentCard.skills();
-        assertEquals("route-optimizer-traffic", skills.get(0).id());
-        assertEquals("Traffic-Aware Route Optimizer", skills.get(0).name());
-        assertEquals("Calculates the optimal driving route between two or more locations, taking into account real-time traffic conditions, road closures, and user preferences (e.g., avoid tolls, prefer highways).", skills.get(0).description());
-        List<String> tags = List.of("maps", "routing", "navigation", "directions", "traffic");
-        assertEquals(tags, skills.get(0).tags());
-        List<String> examples = List.of("Plan a route from '1600 Amphitheatre Parkway, Mountain View, CA' to 'San Francisco International Airport' avoiding tolls.",
-                "{\"origin\": {\"lat\": 37.422, \"lng\": -122.084}, \"destination\": {\"lat\": 37.7749, \"lng\": -122.4194}, \"preferences\": [\"avoid_ferries\"]}");
-        assertEquals(examples, skills.get(0).examples());
-        assertEquals(defaultInputModes, skills.get(0).inputModes());
-        List<String> outputModes = List.of("application/json", "application/vnd.geo+json", "text/html");
-        assertEquals(outputModes, skills.get(0).outputModes());
-        assertEquals("custom-map-generator", skills.get(1).id());
-        assertEquals("Personalized Map Generator", skills.get(1).name());
-        assertEquals("Creates custom map images or interactive map views based on user-defined points of interest, routes, and style preferences. Can overlay data layers.", skills.get(1).description());
-        tags = List.of("maps", "customization", "visualization", "cartography");
-        assertEquals(tags, skills.get(1).tags());
-        examples = List.of("Generate a map of my upcoming road trip with all planned stops highlighted.",
-                "Show me a map visualizing all coffee shops within a 1-mile radius of my current location.");
-        assertEquals(examples, skills.get(1).examples());
-        List<String> inputModes = List.of("application/json");
-        assertEquals(inputModes, skills.get(1).inputModes());
-        outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
-        assertEquals(outputModes, skills.get(1).outputModes());
-        assertEquals("skill-extended", skills.get(2).id());
-        assertEquals("Extended Skill", skills.get(2).name());
-        assertEquals("This is an extended skill.", skills.get(2).description());
-        assertEquals(List.of("extended"), skills.get(2).tags());
-        assertTrue(agentCard.supportsAuthenticatedExtendedCard());
-        assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
-    }
-
     @Test
     public void testA2AClientSendMessageWithFilePart() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_FILE_PART_TEST_REQUEST, MatchType.STRICT))
+        SendMessageRequest request = fromJson(SEND_MESSAGE_WITH_FILE_PART_TEST_REQUEST, SendMessageRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(SEND_MESSAGE_WITH_FILE_PART_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SEND_MESSAGE_WITH_FILE_PART_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
         Message message = new Message.Builder()
                 .role(Message.Role.USER)
                 .parts(List.of(
@@ -573,27 +328,16 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientSendMessageWithDataPart() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_DATA_PART_TEST_REQUEST, MatchType.STRICT))
+        SendMessageRequest request = fromJson(SEND_MESSAGE_WITH_DATA_PART_TEST_REQUEST, SendMessageRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(SEND_MESSAGE_WITH_DATA_PART_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SEND_MESSAGE_WITH_DATA_PART_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
-        
         Map<String, Object> data = new HashMap<>();
         data.put("temperature", 25.5);
         data.put("humidity", 60.2);
         data.put("location", "San Francisco");
         data.put("timestamp", "2024-01-15T10:30:00Z");
-        
+
         Message message = new Message.Builder()
                 .role(Message.Role.USER)
                 .parts(List.of(
@@ -635,26 +379,15 @@ public class A2AClientTest {
 
     @Test
     public void testA2AClientSendMessageWithMixedParts() throws Exception {
-        this.server.when(
-                        request()
-                                .withMethod("POST")
-                                .withPath("/")
-                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_REQUEST, MatchType.STRICT))
+        SendMessageRequest request = fromJson(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_REQUEST, SendMessageRequest.class);
+        when(transport.request(anyString(), eq(OBJECT_MAPPER.writeValueAsString(request))))
+                .thenReturn(CompletableFuture.completedFuture(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_RESPONSE));
 
-                )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody(SEND_MESSAGE_WITH_MIXED_PARTS_TEST_RESPONSE)
-                );
-
-        A2AClient client = new A2AClient("http://localhost:4001");
-        
         Map<String, Object> data = new HashMap<>();
         data.put("chartType", "bar");
         data.put("dataPoints", List.of(10, 20, 30, 40));
         data.put("labels", List.of("Q1", "Q2", "Q3", "Q4"));
-        
+
         Message message = new Message.Builder()
                 .role(Message.Role.USER)
                 .parts(List.of(

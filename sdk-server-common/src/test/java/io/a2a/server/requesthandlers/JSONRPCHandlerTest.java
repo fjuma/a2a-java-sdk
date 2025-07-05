@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,8 +22,8 @@ import java.util.function.Consumer;
 
 import jakarta.enterprise.context.Dependent;
 
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.a2a.transport.Transport;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventConsumer;
@@ -1264,67 +1263,24 @@ public class JSONRPCHandlerTest {
 
     @Dependent
     @IfBuildProfile("test")
-    private static class TestHttpClient implements A2AHttpClient {
+    private static class TestHttpClient implements Transport {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
 
         @Override
-        public GetBuilder createGet() {
-            return null;
+        public CompletableFuture<String> request(String url, String body) {
+            try {
+                tasks.add(Utils.OBJECT_MAPPER.readValue(body, Task.class));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            latch.countDown();
+            return CompletableFuture.completedFuture("");
         }
 
         @Override
-        public PostBuilder createPost() {
-            return new TestPostBuilder();
-        }
-
-        class TestPostBuilder implements A2AHttpClient.PostBuilder {
-            private volatile String body;
-            @Override
-            public PostBuilder body(String body) {
-                this.body = body;
-                return this;
-            }
-
-            @Override
-            public A2AHttpResponse post() throws IOException, InterruptedException {
-                tasks.add(Utils.OBJECT_MAPPER.readValue(body, Task.TYPE_REFERENCE));
-                try {
-                    return new A2AHttpResponse() {
-                        @Override
-                        public int status() {
-                            return 200;
-                        }
-
-                        @Override
-                        public boolean success() {
-                            return true;
-                        }
-
-                        @Override
-                        public String body() {
-                            return "";
-                        }
-                    };
-                } finally {
-                    latch.countDown();
-                }
-            }
-
-            @Override
-            public CompletableFuture<Void> postAsyncSSE(Consumer<String> messageConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
-                return null;
-            }
-
-            @Override
-            public PostBuilder url(String s) {
-                return this;
-            }
-
-            @Override
-            public PostBuilder addHeader(String name, String value) {
-                return this;
-            }
+        public void stream(String url, String body, Consumer<StreamingEventKind> onEvent, Consumer<JSONRPCError> onError, Runnable onComplete) {
+            // Not implemented for this test mock
         }
     }
 }

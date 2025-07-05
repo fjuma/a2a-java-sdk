@@ -19,6 +19,12 @@
         <dependency>
             <groupId>io.a2a.sdk</groupId>
             <artifactId>a2a-java-sdk-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.a2a.sdk</groupId>
+            <artifactId>a2a-java-sdk-transport-http</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

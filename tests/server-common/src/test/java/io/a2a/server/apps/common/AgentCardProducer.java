@@ -9,6 +9,7 @@ import jakarta.enterprise.inject.Produces;
 import io.a2a.server.PublicAgentCard;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
+import io.a2a.spec.PulsarTransportConfig;
 import io.quarkus.arc.profile.IfBuildProfile;
 
 @ApplicationScoped
@@ -32,6 +33,7 @@ public class AgentCardProducer {
                 .defaultInputModes(Collections.singletonList("text"))
                 .defaultOutputModes(Collections.singletonList("text"))
                 .skills(new ArrayList<>())
+                .transport(new PulsarTransportConfig("pulsar://localhost:6650", "requests", "streaming"))
                 .build();
     }
 }
