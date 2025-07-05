@@ -17,7 +17,7 @@ public record AgentCard(String name, String description, String url, AgentProvid
                         String version, String documentationUrl, AgentCapabilities capabilities,
                         List<String> defaultInputModes, List<String> defaultOutputModes, List<AgentSkill> skills,
                         boolean supportsAuthenticatedExtendedCard, Map<String, SecurityScheme> securitySchemes,
-                        List<Map<String, List<String>>> security, String iconUrl) {
+                        List<Map<String, List<String>>> security, String iconUrl, TransportConfig transport) {
 
     private static final String TEXT_MODE = "text";
 
@@ -28,8 +28,21 @@ public record AgentCard(String name, String description, String url, AgentProvid
         Assert.checkNotNullParam("description", description);
         Assert.checkNotNullParam("name", name);
         Assert.checkNotNullParam("skills", skills);
-        Assert.checkNotNullParam("url", url);
+        if (transport == null) {
+            Assert.checkNotNullParam("url", url);
+        }
         Assert.checkNotNullParam("version", version);
+    }
+
+    // convenience methods
+    public boolean supportsPulsarTransport() {
+        return transport instanceof PulsarTransportConfig;
+    }
+    public PulsarTransportConfig getPulsarConfig() {
+        if (transport instanceof PulsarTransportConfig config) {
+            return config;
+        }
+        throw new IllegalStateException("Agent card does not have Pulsar transport config");
     }
 
     public static class Builder {
@@ -47,6 +60,7 @@ public record AgentCard(String name, String description, String url, AgentProvid
         private Map<String, SecurityScheme> securitySchemes;
         private List<Map<String, List<String>>> security;
         private String iconUrl;
+        private TransportConfig transport;
 
         public Builder name(String name) {
             this.name = name;
@@ -118,10 +132,15 @@ public record AgentCard(String name, String description, String url, AgentProvid
             return this;
         }
 
+        public Builder transport(TransportConfig transport) {
+            this.transport = transport;
+            return this;
+        }
+
         public AgentCard build() {
             return new AgentCard(name, description, url, provider, version, documentationUrl,
                     capabilities, defaultInputModes, defaultOutputModes, skills,
-                    supportsAuthenticatedExtendedCard, securitySchemes, security, iconUrl);
+                    supportsAuthenticatedExtendedCard, securitySchemes, security, iconUrl, transport);
         }
     }
 }

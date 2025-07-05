@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.a2a.sdk</groupId>
+        <artifactId>a2a-java-sdk-parent</artifactId>
+        <version>0.2.4-SNAPSHOT</version>
+    </parent>
+  
+    <artifactId>a2a-java-sdk-pulsar</artifactId>
+    <name>Java SDK A2A Pulsar</name>
+    <description>Pulsar transport implementation for A2A</description>
+  
+    <dependencies>
+        <!-- A2A Dependencies -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>a2a-java-sdk-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>a2a-java-sdk-server-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+      
+        <!-- Pulsar Dependencies -->
+        <dependency>
+            <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client</artifactId>
+            <version>4.0.5</version>
+        </dependency>
+      
+        <!-- 基于你的 pulsar-rpc 代码 -->
+        <dependency>
+            <groupId>org.apache</groupId>
+            <artifactId>pulsar-rpc-contrib</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

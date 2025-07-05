@@ -118,6 +118,7 @@
                 <version>${logback.version}</version>
                 <scope>test</scope>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -192,5 +193,6 @@
         <module>tck</module>
         <module>examples/helloworld</module>
         <module>tests/server-common</module>
+        <module>sdk-pulsar</module>
     </modules>
 </project>

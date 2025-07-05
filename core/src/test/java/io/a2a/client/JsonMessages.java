@@ -67,7 +67,10 @@ public class JsonMessages {
                     ]
                   }
                 ],
-                "supportsAuthenticatedExtendedCard": true
+                "supportsAuthenticatedExtendedCard": true,
+                "transport": {
+                  "type": "pulsar"
+                }
               }""";
 
     static final String AUTHENTICATION_EXTENDED_AGENT_CARD = """
