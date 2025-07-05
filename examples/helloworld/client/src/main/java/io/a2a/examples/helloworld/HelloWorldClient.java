@@ -5,11 +5,9 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.a2a.client.A2AClient;
-import io.a2a.spec.A2A;
-import io.a2a.spec.AgentCard;
-import io.a2a.spec.Message;
-import io.a2a.spec.MessageSendParams;
-import io.a2a.spec.SendMessageResponse;
+import io.a2a.http.A2ACardResolver;
+import io.a2a.http.JdkHttpTransport;
+import io.a2a.spec.*;
 
 /**
  * A simple example of using the A2A Java SDK to communicate with an A2A server.
@@ -23,8 +21,10 @@ public class HelloWorldClient {
 
     public static void main(String[] args) {
         try {
+            JdkHttpTransport transport = new JdkHttpTransport();
+            A2ACardResolver resolver = new A2ACardResolver(transport, SERVER_URL);
             AgentCard finalAgentCard = null;
-            AgentCard publicAgentCard = A2A.getAgentCard("http://localhost:9999");
+            AgentCard publicAgentCard = resolver.getAgentCard();
             System.out.println("Successfully fetched public agent card:");
             System.out.println(OBJECT_MAPPER.writeValueAsString(publicAgentCard));
             System.out.println("Using public agent card for client initialization (default).");
@@ -34,7 +34,8 @@ public class HelloWorldClient {
                 System.out.println("Public card supports authenticated extended card. Attempting to fetch from: " + SERVER_URL + "/agent/authenticatedExtendedCard");
                 Map<String, String> authHeaders = new HashMap<>();
                 authHeaders.put("Authorization", "Bearer dummy-token-for-extended-card");
-                AgentCard extendedAgentCard = A2A.getAgentCard(SERVER_URL, "/agent/authenticatedExtendedCard", authHeaders);
+                A2ACardResolver extendedResolver = new A2ACardResolver(transport, SERVER_URL, "/agent/authenticatedExtendedCard", authHeaders);
+                AgentCard extendedAgentCard = extendedResolver.getAgentCard();
                 System.out.println("Successfully fetched authenticated extended agent card:");
                 System.out.println(OBJECT_MAPPER.writeValueAsString(extendedAgentCard));
                 System.out.println("Using AUTHENTICATED EXTENDED agent card for client initialization.");
@@ -43,7 +44,7 @@ public class HelloWorldClient {
                 System.out.println("Public card does not indicate support for an extended card. Using public card.");
             }
 
-            A2AClient client = new A2AClient(finalAgentCard);
+            A2AClient client = new A2AClient(finalAgentCard, transport);
             Message message = A2A.toUserMessage(MESSAGE_TEXT); // the message ID will be automatically generated for you
             MessageSendParams params = new MessageSendParams.Builder()
                 .message(message)

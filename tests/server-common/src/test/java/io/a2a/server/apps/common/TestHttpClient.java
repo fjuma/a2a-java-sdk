@@ -11,73 +11,29 @@ import java.util.function.Consumer;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Alternative;
 
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
 import io.a2a.spec.Task;
 import io.a2a.util.Utils;
+import io.a2a.transport.Transport;
 
 @Dependent
 @Alternative
-public class TestHttpClient implements A2AHttpClient {
+public class TestHttpClient implements Transport {
     final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
     volatile CountDownLatch latch;
 
     @Override
-    public GetBuilder createGet() {
-        return null;
+    public CompletableFuture<String> request(String url, String body) {
+        try {
+            tasks.add(Utils.OBJECT_MAPPER.readValue(body, Task.class));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        latch.countDown();
+        return CompletableFuture.completedFuture("");
     }
 
     @Override
-    public PostBuilder createPost() {
-        return new TestPostBuilder();
-    }
-
-    class TestPostBuilder implements A2AHttpClient.PostBuilder {
-        private volatile String body;
-        @Override
-        public PostBuilder body(String body) {
-            this.body = body;
-            return this;
-        }
-
-        @Override
-        public A2AHttpResponse post() throws IOException, InterruptedException {
-            tasks.add(Utils.OBJECT_MAPPER.readValue(body, Task.TYPE_REFERENCE));
-            try {
-                return new A2AHttpResponse() {
-                    @Override
-                    public int status() {
-                        return 200;
-                    }
-
-                    @Override
-                    public boolean success() {
-                        return true;
-                    }
-
-                    @Override
-                    public String body() {
-                        return "";
-                    }
-                };
-            } finally {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public CompletableFuture<Void> postAsyncSSE(Consumer<String> messageConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
-            return null;
-        }
-
-        @Override
-        public PostBuilder url(String s) {
-            return this;
-        }
-
-        @Override
-        public PostBuilder addHeader(String name, String value) {
-            return this;
-        }
+    public void stream(String url, String body, Consumer<io.a2a.spec.StreamingEventKind> onEvent, Consumer<io.a2a.spec.JSONRPCError> onError, Runnable onComplete) {
+        // Not implemented for this test mock
     }
 }
