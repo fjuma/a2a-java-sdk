@@ -193,6 +193,7 @@
         <module>tck</module>
         <module>examples/helloworld</module>
         <module>tests/server-common</module>
-        <module>sdk-pulsar</module>
+        <module>transport-http</module>
+        <module>transport-eda-pulsar</module>
     </modules>
 </project>
