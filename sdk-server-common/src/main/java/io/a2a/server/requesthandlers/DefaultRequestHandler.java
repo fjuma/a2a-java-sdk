@@ -31,7 +31,6 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
-import io.a2a.server.util.TempLoggerWrapper;
 import io.a2a.server.util.async.Internal;
 import io.a2a.spec.Event;
 import io.a2a.spec.EventKind;
@@ -53,7 +52,7 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class DefaultRequestHandler implements RequestHandler {
 
-    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(DefaultRequestHandler.class));
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRequestHandler.class);
 
     private final AgentExecutor agentExecutor;
     private final TaskStore taskStore;
@@ -82,10 +81,10 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public Task onGetTask(TaskQueryParams params) throws JSONRPCError {
-        log.debug("onGetTask {}", params.id());
+        LOGGER.debug("onGetTask {}", params.id());
         Task task = taskStore.get(params.id());
         if (task == null) {
-            log.debug("No task found for {}. Throwing TaskNotFoundError", params.id());
+            LOGGER.debug("No task found for {}. Throwing TaskNotFoundError", params.id());
             throw new TaskNotFoundError();
         }
         if (params.historyLength() != null && task.getHistory() != null && params.historyLength() < task.getHistory().size()) {
@@ -103,7 +102,7 @@ public class DefaultRequestHandler implements RequestHandler {
                     .build();
         }
 
-        log.debug("Task found {}", task);
+        LOGGER.debug("Task found {}", task);
         return task;
     }
 
@@ -147,11 +146,11 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public EventKind onMessageSend(MessageSendParams params) throws JSONRPCError {
-        log.debug("onMessageSend - task: {}; context {}", params.message().getTaskId(), params.message().getContextId());
+        LOGGER.debug("onMessageSend - task: {}; context {}", params.message().getTaskId(), params.message().getContextId());
         MessageSendSetup mss = initMessageSend(params);
 
         String taskId = mss.requestContext.getTaskId();
-        log.debug("Request context taskId: {}", taskId);
+        LOGGER.debug("Request context taskId: {}", taskId);
 
         EventQueue queue = queueManager.createOrTap(taskId);
         ResultAggregator resultAggregator = new ResultAggregator(mss.taskManager, null);
@@ -169,11 +168,11 @@ public class DefaultRequestHandler implements RequestHandler {
             etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
             
             if (etai == null) {
-                log.debug("No result, throwing InternalError");
+                LOGGER.debug("No result, throwing InternalError");
                 throw new InternalError("No result");
             }
             interrupted = etai.interrupted();
-            log.debug("Was interrupted: {}", interrupted);
+            LOGGER.debug("Was interrupted: {}", interrupted);
 
             EventKind kind = etai.eventType();
             if (kind instanceof Task taskResult && !taskId.equals(taskResult.getId())) {
@@ -189,13 +188,13 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        log.debug("Returning: {}", etai.eventType());
+        LOGGER.debug("Returning: {}", etai.eventType());
         return etai.eventType();
     }
 
     @Override
     public Flow.Publisher<StreamingEventKind> onMessageSendStream(MessageSendParams params) throws JSONRPCError {
-        log.debug("onMessageSendStream - task: {}; context {}", params.message().getTaskId(), params.message().getContextId());
+        LOGGER.debug("onMessageSendStream - task: {}; context {}", params.message().getTaskId(), params.message().getContextId());
         MessageSendSetup mss = initMessageSend(params);
 
         AtomicReference<String> taskId = new AtomicReference<>(mss.requestContext.getTaskId());
@@ -353,11 +352,11 @@ public class DefaultRequestHandler implements RequestHandler {
 
         Task task = taskManager.getTask();
         if (task != null) {
-            log.debug("Found task updating with message {}", params.message());
+            LOGGER.debug("Found task updating with message {}", params.message());
             task = taskManager.updateWithMessage(params.message(), task);
 
             if (shouldAddPushInfo(params)) {
-                log.debug("Adding push info");
+                LOGGER.debug("Adding push info");
                 pushNotifier.setInfo(task.getId(), params.configuration().pushNotification());
             }
         }

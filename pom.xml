@@ -29,6 +29,7 @@
         <quarkus.platform.version>3.22.3</quarkus.platform.version>
         <rest-assured.version>5.5.1</rest-assured.version>
         <slf4j.version>2.0.17</slf4j.version>
+        <logback.version>1.5.18</logback.version>
 
         <!-- Redirect test output to file -->
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -109,6 +110,12 @@
                 <groupId>org.mock-server</groupId>
                 <artifactId>mockserver-netty</artifactId>
                 <version>${mockserver.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

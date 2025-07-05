@@ -591,7 +591,6 @@ public class AsyncUtilsTest {
         Flow.Publisher<String> processor = processor(createTubeConfig(), source, new BiFunction<Consumer<Throwable>, String, Boolean>() {
             @Override
             public Boolean apply(Consumer<Throwable> throwableConsumer, String item) {
-                System.out.println("-> (1) " + item);
                 if (item.equals("c")) {
                     throw new IllegalStateException();
                 }
@@ -688,7 +687,6 @@ public class AsyncUtilsTest {
             }
         });
 
-        System.out.println("---hi");
         latch.await(2, TimeUnit.SECONDS);
         assertEquals(6, results.size());
     }

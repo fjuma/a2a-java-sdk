@@ -20,9 +20,9 @@ import jakarta.ws.rs.sse.SseEventSink;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-
 import io.a2a.server.ExtendedAgentCard;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
+import io.a2a.server.util.async.Internal;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
@@ -46,10 +46,13 @@ import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
-import io.a2a.server.util.async.Internal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/")
 public class A2AServerResource {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(A2AServerResource.class);
 
     @Inject
     JSONRPCHandler jsonRpcHandler;
@@ -76,7 +79,12 @@ public class A2AServerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public JSONRPCResponse<?> handleNonStreamingRequests(NonStreamingJSONRPCRequest<?> request) {
-        return processNonStreamingRequest(request);
+        LOGGER.debug("Handling non-streaming request");
+        try {
+            return processNonStreamingRequest(request);
+        } finally {
+            LOGGER.debug("Completed non-streaming request");
+        }
     }
 
     /**
@@ -87,9 +95,9 @@ public class A2AServerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public void handleStreamingRequests(StreamingJSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
-        System.out.println("=====> Streaming");
+        LOGGER.debug("Handling streaming request");
         executor.execute(() -> processStreamingRequest(request, sseEventSink, sse));
-        System.out.println("=====> Streaming - done");
+        LOGGER.debug("Submitted streaming request for async processing");
     }
 
     /**
@@ -167,7 +175,6 @@ public class A2AServerResource {
             public void onSubscribe(Flow.Subscription subscription) {
                 this.subscription = subscription;
                 subscription.request(Long.MAX_VALUE);
-                System.out.println("SUBSCRIBING!");
                 // Notify tests that we are subscribed
                 Runnable runnable = streamingIsSubscribedRunnable;
                 if (runnable != null) {
