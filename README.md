@@ -29,26 +29,34 @@ More examples will be added soon.
 
 The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A) Protocol](https://google-a2a.github.io/A2A). To run your agentic Java application as an A2A server, simply follow the steps below.
 
-- [Add the A2A Java SDK Core Maven dependency to your project](#1-add-the-a2a-java-sdk-core-maven-dependency-to-your-project)
+- [Add an A2A Java SDK Server Maven dependency to your project](#1-add-an-a2a-java-sdk-server-maven-dependency-to-your-project)
 - [Add a class that creates an A2A Agent Card](#2-add-a-class-that-creates-an-a2a-agent-card)
 - [Add a class that creates an A2A Agent Executor](#3-add-a-class-that-creates-an-a2a-agent-executor)
-- [Add an A2A Java SDK Server Maven dependency to your project](#4-add-an-a2a-java-sdk-server-maven-dependency-to-your-project)
 
-### 1. Add the A2A Java SDK Maven dependencies to your project
+### 1. Add an A2A Java SDK Server Maven dependency to your project
 
-> **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
-> sure to check out the latest tag (you can see the tags [here](https://github.com/a2aproject/a2a-java/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
+Adding a dependency on an A2A Java SDK Server will provide access to the core classes that make up the A2A specification
+and allow you to run your agentic Java application as an A2A server agent.
+
+The A2A Java SDK provides two A2A server endpoint implementations, one based on Jakarta REST (`a2a-java-sdk-server-jakarta`) and one based on Quarkus Reactive Routes (`a2a-java-sdk-server-quarkus`). You can choose the one that best fits your application.
+
+Add **one** of the following dependencies to your project:
 
 ```xml
 <dependency>
     <groupId>io.a2a.sdk</groupId>
-    <artifactId>a2a-java-sdk-client</artifactId>
-    <version>0.2.3</version>
+    <artifactId>a2a-java-sdk-server-jakarta</artifactId>
+    <version>${io.a2a.sdk.version}</version>
 </dependency>
+```
+
+OR
+
+```xml
 <dependency>
     <groupId>io.a2a.sdk</groupId>
-    <artifactId>a2a-java-sdk-server-common</artifactId>
-    <version>0.2.3</version>
+    <artifactId>a2a-java-sdk-server-quarkus</artifactId>
+    <version>${io.a2a.sdk.version}</version>
 </dependency>
 ```
 
@@ -185,38 +193,18 @@ public class WeatherAgentExecutorProducer {
 }
 ```
 
-### 4. Add an A2A Java SDK Server Maven dependency to your project
-
-> **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
-> sure to check out the latest tag (you can see the tags [here](https://github.com/a2aproject/a2a-java/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
-
-Adding a dependency on an A2A Java SDK Server will allow you to run your agentic Java application as an A2A server.
-
-The A2A Java SDK provides two A2A server endpoint implementations, one based on Jakarta REST (`a2a-java-sdk-server-jakarta`) and one based on Quarkus Reactive Routes (`a2a-java-sdk-server-quarkus`). You can choose the one that best fits your application.
-
-Add **one** of the following dependencies to your project:
-
-```xml
-<dependency>
-    <groupId>io.a2a.sdk</groupId>
-    <artifactId>a2a-java-sdk-server-jakarta</artifactId>
-    <version>${io.a2a.sdk.version}</version>
-</dependency>
-```
-
-OR
-
-```xml
-<dependency>
-    <groupId>io.a2a.sdk</groupId>
-    <artifactId>a2a-java-sdk-server-quarkus</artifactId>
-    <version>${io.a2a.sdk.version}</version>
-</dependency>
-```
-
 ## A2A Client
 
 The A2A Java SDK provides a Java client implementation of the [Agent2Agent (A2A) Protocol](https://google-a2a.github.io/A2A), allowing communication with A2A servers.
+To make use of the Java `A2AClient`, simply add the following dependency:
+
+```xml
+<dependency>
+    <groupId>io.a2a.sdk</groupId>
+    <artifactId>a2a-java-sdk-client</artifactId>
+    <version>${io.a2a.sdk.version}</version>
+</dependency>
+```
 
 ### Sample Usage
 
