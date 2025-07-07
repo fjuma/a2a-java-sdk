@@ -34,8 +34,10 @@ public class JakartaA2AServerTest extends AbstractA2AServerTest {
     @Deployment
     public static WebArchive createTestArchive() throws IOException {
         final List<String> prefixes = List.of(
-                    "a2a-java-sdk-core",
+                    "a2a-java-sdk-client",
+                    "a2a-java-sdk-common",
                     "a2a-java-sdk-server-common",
+                    "a2a-java-sdk-spec",
                     "jackson",
                     "mutiny",
                     "slf4j",
