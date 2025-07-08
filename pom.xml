@@ -6,7 +6,7 @@
 
     <groupId>io.github.a2asdk</groupId>
     <artifactId>a2a-java-sdk-parent</artifactId>
-    <version>0.2.3.Alpha1</version>
+    <version>0.2.3.Alpha2-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
