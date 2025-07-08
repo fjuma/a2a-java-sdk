@@ -413,15 +413,7 @@ public class A2AClient {
         SendStreamingMessageRequest sendStreamingMessageRequest = sendStreamingMessageRequestBuilder.build();
         try {
             transport.sendMessageStreaming(sendStreamingMessageRequest, agentUrl, SEND_MESSAGE_RESPONSE_REFERENCE,
-                    response -> {
-                        String msg;
-                        try {
-                            msg = OBJECT_MAPPER.writeValueAsString(response);
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
-                        }
-                        sseEventListener.onMessage(msg, ref.get());
-                    },
+                    response -> sseEventListener.onMessage(response, ref.get()),
                     throwable -> sseEventListener.onError(throwable, ref.get()),
                     () -> {
                         // We don't need to do anything special on completion
@@ -478,15 +470,7 @@ public class A2AClient {
         TaskResubscriptionRequest taskResubscriptionRequest = taskResubscriptionRequestBuilder.build();
         try {
             transport.sendMessageStreaming(taskResubscriptionRequest, agentUrl, GET_TASK_RESPONSE_REFERENCE,
-                    response -> {
-                        String msg;
-                        try {
-                            msg = OBJECT_MAPPER.writeValueAsString(response);
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
-                        }
-                        sseEventListener.onMessage(msg, ref.get());
-                    },
+                    response -> sseEventListener.onMessage(response, ref.get()),
                     throwable -> sseEventListener.onError(throwable, ref.get()),
                     () -> {
                         // We don't need to do anything special on completion
