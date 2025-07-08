@@ -1,12 +1,22 @@
-package io.a2a.http;
+package io.a2a.transport.http;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.a2a.spec.A2AClientError;
+import io.a2a.spec.A2AClientJSONError;
+import io.a2a.spec.A2AServerException;
+import io.a2a.spec.AgentCard;
+import io.a2a.spec.Event;
+import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.JSONRPCRequest;
+import io.a2a.spec.JSONRPCResponse;
+import io.a2a.util.Utils;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,16 +24,88 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 
-public class JdkA2AHttpClient implements A2AHttpClient {
+import static io.a2a.util.Utils.OBJECT_MAPPER;
+import static io.a2a.util.Utils.unmarshalFrom;
+
+public class JdkA2AHttpTransport implements A2AHttpTransport {
+    private static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() { };
+
 
     private final HttpClient httpClient;
 
-    public JdkA2AHttpClient() {
+    public JdkA2AHttpTransport() {
         httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }
+
+    @Override
+    public AgentCard getAgentCard(String method, Map<String, String> authInfo) throws A2AClientError {
+        GetBuilder builder = createGet()
+                .url(method)
+                .addHeader("Content-Type", "application/json");
+
+        if (authInfo != null) {
+            for (Map.Entry<String, String> entry : authInfo.entrySet()) {
+                builder.addHeader(entry.getKey(), entry.getValue());
+            }
+        }
+
+        String body;
+        try {
+            A2AHttpResponse response = builder.get();
+            if (!response.success()) {
+                throw new A2AClientError("Failed to obtain agent card: " + response.status());
+            }
+            body = response.body();
+        } catch (IOException | InterruptedException e) {
+            throw new A2AClientError("Failed to obtain agent card", e);
+        }
+
+        try {
+            return unmarshalFrom(body, AGENT_CARD_TYPE_REFERENCE);
+        } catch (JsonProcessingException e) {
+            throw new A2AClientJSONError("Could not unmarshal agent card response", e);
+        }
+    }
+
+    @Override
+    public void sendEvent(Event event, String method) throws IOException, InterruptedException {
+        String body = Utils.OBJECT_MAPPER.writeValueAsString(event);
+        createPost().url(method).body(body).post();
+    }
+
+    @Override
+    public <T extends JSONRPCResponse<?>> T sendMessage(
+            JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef) throws IOException, InterruptedException {
+
+        PostBuilder postBuilder = createPostBuilder(request, operation);
+        A2AHttpResponse response = postBuilder.post();
+
+        if (!response.success()) {
+            throw new IOException("Request failed " + response.status());
+        }
+
+        return unmarshalResponse(response.body(), responseTypeRef);
+    }
+
+    @Override
+    public <T extends JSONRPCResponse<?>> CompletableFuture<Void> sendMessageStreaming(
+            JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef,
+            Consumer<T> responseConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
+        PostBuilder postBuilder = createPostBuilder(request, operation);
+
+        return postBuilder.postAsyncSSE(message -> {
+            try {
+                T response = unmarshalResponse(message, responseTypeRef);
+                responseConsumer.accept(response);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, errorConsumer, completeRunnable);
+    }
+
 
     @Override
     public GetBuilder createGet() {
@@ -35,9 +117,27 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         return new JdkPostBuilder();
     }
 
+
+    private PostBuilder createPostBuilder(JSONRPCRequest<?> request, String method) throws JsonProcessingException {
+        return createPost()
+                .url(method)
+                .addHeader("Content-Type", "application/json")
+                .body(OBJECT_MAPPER.writeValueAsString(request));
+    }
+
+    private <T extends JSONRPCResponse<?>> T unmarshalResponse(String response, TypeReference<T> typeReference)
+            throws A2AServerException, JsonProcessingException {
+        T value = unmarshalFrom(response, typeReference);
+        JSONRPCError error = value.getError();
+        if (error != null) {
+            throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""));
+        }
+        return value;
+    }
+
     private abstract class JdkBuilder<T extends Builder<T>> implements Builder<T> {
         private String url;
-        private Map<String, String> headers = new HashMap<>();
+        private final Map<String, String> headers = new HashMap<>();
 
         @Override
         public T url(String url) {
@@ -105,7 +205,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
                 }
             };
 
-            BodyHandler<Void> bodyHandler = BodyHandlers.fromLineSubscriber(subscriber);
+            HttpResponse.BodyHandler<Void> bodyHandler = HttpResponse.BodyHandlers.fromLineSubscriber(subscriber);
 
             // Send the response async, and let the subscriber handle the lines.
             return httpClient.sendAsync(request, bodyHandler)
@@ -117,7 +217,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         }
     }
 
-    private class JdkGetBuilder extends JdkBuilder<GetBuilder> implements A2AHttpClient.GetBuilder {
+    private class JdkGetBuilder extends JdkBuilder<GetBuilder> implements A2AHttpTransport.GetBuilder {
 
         private HttpRequest.Builder createRequestBuilder(boolean SSE) throws IOException {
             HttpRequest.Builder builder = super.createRequestBuilder().GET();
@@ -132,7 +232,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
             HttpRequest request = createRequestBuilder(false)
                     .build();
             HttpResponse<String> response =
-                    httpClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             return new JdkHttpResponse(response);
         }
 
@@ -147,7 +247,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
         }
     }
 
-    private class JdkPostBuilder extends JdkBuilder<PostBuilder> implements A2AHttpClient.PostBuilder {
+    private class JdkPostBuilder extends JdkBuilder<PostBuilder> implements A2AHttpTransport.PostBuilder {
         String body = "";
 
         @Override
@@ -171,7 +271,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
                     .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                     .build();
             HttpResponse<String> response =
-                    httpClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             return new JdkHttpResponse(response);
         }
 

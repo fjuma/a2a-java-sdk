@@ -1,5 +1,7 @@
 package io.a2a.server.requesthandlers;
 
+import static io.a2a.util.Utils.OBJECT_MAPPER;
+import static io.a2a.util.Utils.unmarshalFrom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -12,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -21,11 +24,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.a2a.spec.A2AClientError;
+import io.a2a.spec.A2AServerException;
 import io.a2a.spec.InternalError;
+import io.a2a.spec.JSONRPCRequest;
+import io.a2a.spec.JSONRPCResponse;
+import io.a2a.transport.http.A2AHttpTransport;
 import jakarta.enterprise.context.Dependent;
 
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
+import io.a2a.transport.http.A2AHttpResponse;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventConsumer;
@@ -47,7 +56,6 @@ import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
-import io.a2a.spec.InternalError;
 import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
@@ -104,7 +112,7 @@ public class JSONRPCHandlerTest {
     AgentExecutorMethod agentExecutorExecute;
     AgentExecutorMethod agentExecutorCancel;
     private InMemoryQueueManager queueManager;
-    private TestHttpClient httpClient;
+    private TestHttpTransport transport;
 
     private final Executor internalExecutor = Executors.newCachedThreadPool();
 
@@ -129,8 +137,8 @@ public class JSONRPCHandlerTest {
 
         taskStore = new InMemoryTaskStore();
         queueManager = new InMemoryQueueManager();
-        httpClient = new TestHttpClient();
-        PushNotifier pushNotifier = new InMemoryPushNotifier(httpClient);
+        transport = new TestHttpTransport();
+        PushNotifier pushNotifier = new InMemoryPushNotifier(transport);
 
         requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier, internalExecutor);
     }
@@ -693,7 +701,7 @@ public class JSONRPCHandlerTest {
         final List<StreamingEventKind> results = Collections.synchronizedList(new ArrayList<>());
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(6);
-        httpClient.latch = latch;
+        transport.latch = latch;
 
         Executors.newSingleThreadExecutor().execute(() -> {
             response.subscribe(new Flow.Subscriber<>() {
@@ -727,15 +735,15 @@ public class JSONRPCHandlerTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         subscriptionRef.get().cancel();
         assertEquals(3, results.size());
-        assertEquals(3, httpClient.tasks.size());
+        assertEquals(3, transport.tasks.size());
 
-        Task curr = httpClient.tasks.get(0);
+        Task curr = transport.tasks.get(0);
         assertEquals(MINIMAL_TASK.getId(), curr.getId());
         assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
         assertEquals(MINIMAL_TASK.getStatus().state(), curr.getStatus().state());
         assertEquals(0, curr.getArtifacts() == null ? 0 : curr.getArtifacts().size());
 
-        curr = httpClient.tasks.get(1);
+        curr = transport.tasks.get(1);
         assertEquals(MINIMAL_TASK.getId(), curr.getId());
         assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
         assertEquals(MINIMAL_TASK.getStatus().state(), curr.getStatus().state());
@@ -743,7 +751,7 @@ public class JSONRPCHandlerTest {
         assertEquals(1, curr.getArtifacts().get(0).parts().size());
         assertEquals("text", ((TextPart)curr.getArtifacts().get(0).parts().get(0)).getText());
 
-        curr = httpClient.tasks.get(2);
+        curr = transport.tasks.get(2);
         assertEquals(MINIMAL_TASK.getId(), curr.getId());
         assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
         assertEquals(TaskState.COMPLETED, curr.getStatus().state());
@@ -1265,7 +1273,7 @@ public class JSONRPCHandlerTest {
 
     @Dependent
     @IfBuildProfile("test")
-    private static class TestHttpClient implements A2AHttpClient {
+    private static class TestHttpTransport implements A2AHttpTransport {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
 
@@ -1279,7 +1287,52 @@ public class JSONRPCHandlerTest {
             return new TestPostBuilder();
         }
 
-        class TestPostBuilder implements A2AHttpClient.PostBuilder {
+        @Override
+        public AgentCard getAgentCard(String method, Map<String, String> authInfo) throws A2AClientError {
+            return null;
+        }
+
+        @Override
+        public void sendEvent(Event event, String method) throws IOException, InterruptedException {
+            String body = Utils.OBJECT_MAPPER.writeValueAsString(event);
+            createPost().url(method).body(body).post();
+        }
+
+        @Override
+        public <T extends JSONRPCResponse<?>> T sendMessage(JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef) throws IOException, InterruptedException {
+            PostBuilder postBuilder = createPostBuilder(request, operation);
+            A2AHttpResponse response = postBuilder.post();
+
+            if (!response.success()) {
+                throw new IOException("Request failed " + response.status());
+            }
+
+            return unmarshalResponse(response.body(), responseTypeRef);
+        }
+
+        @Override
+        public <T extends JSONRPCResponse<?>> CompletableFuture<Void> sendMessageStreaming(JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef, Consumer<T> responseConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
+            return null;
+        }
+
+        private PostBuilder createPostBuilder(JSONRPCRequest<?> request, String method) throws JsonProcessingException {
+            return createPost()
+                    .url(method)
+                    .addHeader("Content-Type", "application/json")
+                    .body(OBJECT_MAPPER.writeValueAsString(request));
+        }
+
+        private <T extends JSONRPCResponse<?>> T unmarshalResponse(String response, TypeReference<T> typeReference)
+                throws A2AServerException, JsonProcessingException {
+            T value = unmarshalFrom(response, typeReference);
+            JSONRPCError error = value.getError();
+            if (error != null) {
+                throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""));
+            }
+            return value;
+        }
+
+        class TestPostBuilder implements PostBuilder {
             private volatile String body;
             @Override
             public PostBuilder body(String body) {

@@ -1,4 +1,4 @@
-package io.a2a.http;
+package io.a2a.transport.http;
 
 public interface A2AHttpResponse {
     int status();
