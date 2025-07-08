@@ -8,20 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import io.a2a.spec.Event;
-import io.a2a.spec.JSONRPCRequest;
-import io.a2a.spec.JSONRPCResponse;
 import io.a2a.transport.http.A2AHttpResponse;
 import io.a2a.spec.A2AClientError;
 import io.a2a.spec.A2AClientJSONError;
 import io.a2a.spec.AgentCard;
-import io.a2a.transport.http.A2AHttpTransport;
+import io.a2a.transport.http.JdkA2AHttpTransport;
 import org.junit.jupiter.api.Test;
 
 public class A2ACardResolverTest {
@@ -111,7 +105,7 @@ public class A2ACardResolverTest {
         assertTrue(msg.contains("503"));
     }
 
-    private static class TestHttpTransport implements A2AHttpTransport {
+    private static class TestHttpTransport extends JdkA2AHttpTransport {
         int status = 200;
         String body;
         String url;
@@ -123,51 +117,6 @@ public class A2ACardResolverTest {
 
         @Override
         public PostBuilder createPost() {
-            return null;
-        }
-
-        @Override
-        public AgentCard getAgentCard(String method, Map<String, String> authInfo) throws A2AClientError {
-            GetBuilder builder = createGet()
-                    .url(method)
-                    .addHeader("Content-Type", "application/json");
-
-            if (authInfo != null) {
-                for (Map.Entry<String, String> entry : authInfo.entrySet()) {
-                    builder.addHeader(entry.getKey(), entry.getValue());
-                }
-            }
-
-            String body;
-            try {
-                A2AHttpResponse response = builder.get();
-                if (!response.success()) {
-                    throw new A2AClientError("Failed to obtain agent card: " + response.status());
-                }
-                body = response.body();
-            } catch (IOException | InterruptedException e) {
-                throw new A2AClientError("Failed to obtain agent card", e);
-            }
-
-            try {
-                return unmarshalFrom(body, AGENT_CARD_TYPE_REFERENCE);
-            } catch (JsonProcessingException e) {
-                throw new A2AClientJSONError("Could not unmarshal agent card response", e);
-            }
-        }
-
-        @Override
-        public void sendEvent(Event event, String method) throws IOException, InterruptedException {
-
-        }
-
-        @Override
-        public <T extends JSONRPCResponse<?>> T sendMessage(JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef) throws IOException, InterruptedException {
-            return null;
-        }
-
-        @Override
-        public <T extends JSONRPCResponse<?>> CompletableFuture<Void> sendMessageStreaming(JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef, Consumer<T> responseConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
             return null;
         }
 

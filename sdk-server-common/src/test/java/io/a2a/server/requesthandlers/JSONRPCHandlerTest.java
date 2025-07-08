@@ -1,7 +1,5 @@
 package io.a2a.server.requesthandlers;
 
-import static io.a2a.util.Utils.OBJECT_MAPPER;
-import static io.a2a.util.Utils.unmarshalFrom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,7 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -24,14 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import io.a2a.spec.A2AClientError;
-import io.a2a.spec.A2AServerException;
 import io.a2a.spec.InternalError;
-import io.a2a.spec.JSONRPCRequest;
-import io.a2a.spec.JSONRPCResponse;
-import io.a2a.transport.http.A2AHttpTransport;
+import io.a2a.transport.http.JdkA2AHttpTransport;
 import jakarta.enterprise.context.Dependent;
 
 import io.a2a.transport.http.A2AHttpResponse;
@@ -1273,7 +1264,7 @@ public class JSONRPCHandlerTest {
 
     @Dependent
     @IfBuildProfile("test")
-    private static class TestHttpTransport implements A2AHttpTransport {
+    private static class TestHttpTransport extends JdkA2AHttpTransport {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
 
@@ -1285,51 +1276,6 @@ public class JSONRPCHandlerTest {
         @Override
         public PostBuilder createPost() {
             return new TestPostBuilder();
-        }
-
-        @Override
-        public AgentCard getAgentCard(String method, Map<String, String> authInfo) throws A2AClientError {
-            return null;
-        }
-
-        @Override
-        public void sendEvent(Event event, String method) throws IOException, InterruptedException {
-            String body = Utils.OBJECT_MAPPER.writeValueAsString(event);
-            createPost().url(method).body(body).post();
-        }
-
-        @Override
-        public <T extends JSONRPCResponse<?>> T sendMessage(JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef) throws IOException, InterruptedException {
-            PostBuilder postBuilder = createPostBuilder(request, operation);
-            A2AHttpResponse response = postBuilder.post();
-
-            if (!response.success()) {
-                throw new IOException("Request failed " + response.status());
-            }
-
-            return unmarshalResponse(response.body(), responseTypeRef);
-        }
-
-        @Override
-        public <T extends JSONRPCResponse<?>> CompletableFuture<Void> sendMessageStreaming(JSONRPCRequest<?> request, String operation, TypeReference<T> responseTypeRef, Consumer<T> responseConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
-            return null;
-        }
-
-        private PostBuilder createPostBuilder(JSONRPCRequest<?> request, String method) throws JsonProcessingException {
-            return createPost()
-                    .url(method)
-                    .addHeader("Content-Type", "application/json")
-                    .body(OBJECT_MAPPER.writeValueAsString(request));
-        }
-
-        private <T extends JSONRPCResponse<?>> T unmarshalResponse(String response, TypeReference<T> typeReference)
-                throws A2AServerException, JsonProcessingException {
-            T value = unmarshalFrom(response, typeReference);
-            JSONRPCError error = value.getError();
-            if (error != null) {
-                throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""));
-            }
-            return value;
         }
 
         class TestPostBuilder implements PostBuilder {
