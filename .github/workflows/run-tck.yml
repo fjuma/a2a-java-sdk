@@ -1,0 +1,94 @@
+name: Run TCK
+
+on:
+  # Handle all branches for now
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  # Tag of the TCK
+  TCK_VERSION: 0.2.3
+  # Tells uv to not need a venv, and instead use system
+  UV_SYSTEM_PYTHON: 1
+
+# Only run the latest job
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  tck-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout a2a-java
+        uses: actions/checkout@v4
+      - name: Checkout a2a-tck
+        uses: actions/checkout@v4
+        with:
+          repository: maeste/a2a-tck
+          path: tck/a2a-tck
+          ref: ${{ env.TCK_VERSION }}
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: check java_home
+        run: echo $JAVA_HOME
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "tck/a2a-tck/pyproject.toml"
+      - name: Install uv and Python dependencies
+        run: |
+          pip install uv
+          uv pip install -e .
+        working-directory: tck/a2a-tck
+      - name: Build with Maven, skipping tests
+        run: mvn -B install -DskipTests
+      - name: Start SUT
+        run: mvn -B quarkus:dev &
+        working-directory: tck
+      - name: Wait for SUT to start
+        run: |
+          URL="http://localhost:9999/.well-known/agent.json"
+          EXPECTED_STATUS=200
+          TIMEOUT=120
+          RETRY_INTERVAL=2
+          START_TIME=$(date +%s)
+
+          while true; do
+            # Calculate elapsed time
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+            # Check for timeout
+            if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
+                echo "❌ Timeout: Server did not respond with status $EXPECTED_STATUS within $TIMEOUT seconds."
+                exit 1
+            fi
+
+            # Get HTTP status code. || true is to reporting a failure to connect as an error
+            HTTP_STATUS=$(curl --output /dev/null --silent --write-out "%{http_code}" "$URL") || true
+            echo "STATUS: ${HTTP_STATUS}"
+
+            # Check if we got the correct status code
+            if [ "$HTTP_STATUS" -eq "$EXPECTED_STATUS" ]; then
+                echo "✅ Server is up! Received status $HTTP_STATUS after $ELAPSED_TIME seconds."
+                break;
+            fi
+
+            # Wait before retrying
+            echo "⏳ Server not ready (status: $HTTP_STATUS). Retrying in $RETRY_INTERVAL seconds..."
+            sleep "$RETRY_INTERVAL"
+          done
+          
+      - name: Run TCK
+        run: |
+          ./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report report.json
+        working-directory: tck/a2a-tck

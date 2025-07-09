@@ -103,6 +103,12 @@ public abstract class AbstractA2AServerTest {
             .parts(new TextPart("test message"))
             .build();
 
+    private final int serverPort;
+
+    protected AbstractA2AServerTest(int serverPort) {
+        this.serverPort = serverPort;
+    }
+
     @Test
     public void testGetTaskSuccess() {
         testGetTask();
@@ -222,7 +228,8 @@ public abstract class AbstractA2AServerTest {
                 .then()
                 .statusCode(200)
                 .extract()
-                .as(CancelTaskResponse.class);
+                .as(CancelTaskResponse.class)
+                ;
         assertEquals(request.getId(), response.getId());
         assertNull(response.getResult());
         // this should be an instance of UnsupportedOperationError, see https://github.com/a2aproject/a2a-java/issues/23
@@ -853,7 +860,8 @@ public abstract class AbstractA2AServerTest {
 
         // Create the request
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8081/"))
+                .uri(URI.create("http://localhost:" + serverPort +
+                        "/"))
                 .POST(HttpRequest.BodyPublishers.ofString(Utils.OBJECT_MAPPER.writeValueAsString(request)))
                 .header("Content-Type", "application/json");
         if (mediaType != null) {

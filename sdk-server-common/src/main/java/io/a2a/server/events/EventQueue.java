@@ -20,8 +20,6 @@ public abstract class EventQueue implements AutoCloseable {
     // TODO decide on a capacity
     private static final int queueSize = 1000;
 
-    private final EventQueue parent;
-
     private final BlockingQueue<Event> queue = new LinkedBlockingDeque<>();
     private final Semaphore semaphore = new Semaphore(queueSize, true);
     private volatile boolean closed = false;
@@ -34,10 +32,10 @@ public abstract class EventQueue implements AutoCloseable {
 
     protected EventQueue(EventQueue parent) {
         LOGGER.trace("Creating {}, parent: {}", this, parent);
-        this.parent = parent;
     }
 
     public static EventQueue create() {
+        
         return new MainQueue();
     }
 

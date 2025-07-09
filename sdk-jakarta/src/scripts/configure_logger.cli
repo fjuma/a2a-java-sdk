@@ -1,0 +1,2 @@
+/subsystem=logging/logger=org.jboss.weld:add(level=DEBUG)
+/subsystem=logging/logger=io.a2a:add(level=DEBUG)

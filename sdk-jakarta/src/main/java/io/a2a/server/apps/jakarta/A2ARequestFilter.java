@@ -1,26 +1,29 @@
 package io.a2a.server.apps.jakarta;
 
-import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
-import static io.a2a.spec.A2A.SEND_MESSAGE_METHOD;
-import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
-import static io.a2a.spec.A2A.SEND_TASK_RESUBSCRIPTION_METHOD;
-import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import io.a2a.spec.CancelTaskRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskRequest;
+import io.a2a.spec.SendMessageRequest;
+import io.a2a.spec.SendStreamingMessageRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.TaskResubscriptionRequest;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Provider
 @PreMatching
 public class A2ARequestFilter implements ContainerRequestFilter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(A2ARequestFilter.class);
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -31,8 +34,10 @@ public class A2ARequestFilter implements ContainerRequestFilter {
                 // ensure the request is treated as a streaming request or a non-streaming request
                 // based on the method in the request body
                 if (isStreamingRequest(requestBody)) {
+                    LOGGER.debug("Handling request as streaming: {}", requestBody);
                     putAcceptHeader(requestContext, MediaType.SERVER_SENT_EVENTS);
                 } else if (isNonStreamingRequest(requestBody)) {
+                    LOGGER.debug("Handling request as non-streaming: {}", requestBody);
                     putAcceptHeader(requestContext, MediaType.APPLICATION_JSON);
                 }
                 // reset the entity stream
@@ -44,16 +49,16 @@ public class A2ARequestFilter implements ContainerRequestFilter {
     }
 
     private static boolean isStreamingRequest(String requestBody) {
-        return requestBody.contains(SEND_STREAMING_MESSAGE_METHOD) ||
-               requestBody.contains(SEND_TASK_RESUBSCRIPTION_METHOD);
+        return requestBody.contains(SendStreamingMessageRequest.METHOD) ||
+               requestBody.contains(TaskResubscriptionRequest.METHOD);
     }
 
     private static boolean isNonStreamingRequest(String requestBody) {
-        return requestBody.contains(GET_TASK_METHOD) ||
-                requestBody.contains(CANCEL_TASK_METHOD) ||
-                requestBody.contains(SEND_MESSAGE_METHOD) ||
-                requestBody.contains(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD) ||
-                requestBody.contains(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
+        return requestBody.contains(GetTaskRequest.METHOD) ||
+                requestBody.contains(CancelTaskRequest.METHOD) ||
+                requestBody.contains(SendMessageRequest.METHOD) ||
+                requestBody.contains(SetTaskPushNotificationConfigRequest.METHOD) ||
+                requestBody.contains(GetTaskPushNotificationConfigRequest.METHOD);
     }
 
     private static void putAcceptHeader(ContainerRequestContext requestContext, String mediaType) {

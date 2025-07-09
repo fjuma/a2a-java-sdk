@@ -16,6 +16,10 @@ public class QuarkusA2AServerTest extends AbstractA2AServerTest {
     @Inject
     InMemoryQueueManager queueManager;
 
+    public QuarkusA2AServerTest() {
+        super(8081);
+    }
+
     @Override
     protected TaskStore getTaskStore() {
         return taskStore;

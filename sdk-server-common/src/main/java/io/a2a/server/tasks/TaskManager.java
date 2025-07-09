@@ -6,9 +6,9 @@ import static io.a2a.util.Assert.checkNotNullParam;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.a2a.spec.Event;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.Artifact;
+import io.a2a.spec.Event;
 import io.a2a.spec.InvalidParamsError;
 import io.a2a.spec.Message;
 import io.a2a.spec.Part;

@@ -4,19 +4,48 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.a2a.sdk</groupId>
+    <groupId>io.github.a2asdk</groupId>
     <artifactId>a2a-java-sdk-parent</artifactId>
-    <version>0.2.4-SNAPSHOT</version>
+    <version>0.2.3.Beta2-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
     <name>Java SDK A2A Parent</name>
     <description>Java SDK for the Agent2Agent Protocol (A2A)</description>
 
+    <url>https://github.com/a2asdk/a2a-java-sdk</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>a2a-java</id>
+            <name>The a2a-java developers</name>
+            <organization>a2aproject</organization>
+            <organizationUrl>https://github.com/a2aproject/a2a-java</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/a2asdk/a2a-java-sdk.git</connection>
+        <developerConnection>scm:git:ssh://github.com:a2asdk/a2a-java-sdk.git</developerConnection>
+        <url>https://github.com/a2asdk/a2a-java-sdk</url>
+    </scm>
+
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+        <maven-javadoc-plugin.version>3.8.0</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
+        <sonatype-central-publishing-plugin.version>0.8.0</sonatype-central-publishing-plugin.version>
         <jackson.version>2.17.0</jackson.version>
         <jakarta.enterprise.cdi-api.version>4.1.0</jakarta.enterprise.cdi-api.version>
         <jakarta.inject.jakarta.inject-api.version>2.0.1</jakarta.inject.jakarta.inject-api.version>
@@ -131,7 +160,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${compiler-plugin.version}</version>
+                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <source>17</source>
                         <target>17</target>
@@ -142,12 +171,17 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${surefire-plugin.version}</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <systemPropertyVariables>
                             <maven.home>${maven.home}</maven.home>
                         </systemPropertyVariables>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.4.2</version>
                 </plugin>
                 <plugin>
                     <groupId>io.quarkus</groupId>
@@ -164,29 +198,79 @@
                         </execution>
                     </executions>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${sonatype-central-publishing-plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <!-- This should point to a server entry in your settings.xml -->
+                        <publishingServerId>central-a2asdk-temp</publishingServerId>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven-javadoc-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven-gpg-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                            </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-                <configuration>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
 
     <modules>
-
-        <module>core</module>
         <module>sdk-server-common</module>
+        <module>common</module>
+        <module>spec</module>
+        <module>client</module>
         <module>sdk-jakarta</module>
         <module>sdk-quarkus</module>
         <module>sdk-spring</module>
@@ -195,4 +279,31 @@
         <module>tests/server-common</module>
         <module>examples/spring-helloworld</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <!--
+                This profile generates the required sources and javadoc in order to be able to deploy.
+                The central-publishing-maven-plugin generates the required checksums upon deploy.
+            -->
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

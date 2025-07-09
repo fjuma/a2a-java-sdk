@@ -6,7 +6,7 @@ import jakarta.enterprise.inject.Produces;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
-import io.a2a.spec.A2A;
+import io.a2a.A2A;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.UnsupportedOperationError;
 
