@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.a2a.sdk</groupId>
+        <groupId>io.github.a2asdk</groupId>
         <artifactId>a2a-java-sdk-parent</artifactId>
-        <version>0.2.4-SNAPSHOT</version>
+        <version>0.2.3.Beta2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -27,12 +27,12 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>io.a2a.sdk</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.a2a.sdk</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-server-quarkus</artifactId>
                 <version>${project.version}</version>
             </dependency>

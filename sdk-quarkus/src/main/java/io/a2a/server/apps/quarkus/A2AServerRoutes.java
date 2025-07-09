@@ -154,7 +154,6 @@ public class A2AServerRoutes {
      * Handles incoming GET requests to the authenticated extended agent card endpoint.
      * Returns the agent card in JSON format.
      *
-     * @return the authenticated extended agent card
      */
     @Route(path = "/agent/authenticatedExtendedCard", methods = Route.HttpMethod.GET, produces = APPLICATION_JSON)
     public void getAuthenticatedExtendedAgentCard(RoutingExchange re) {
