@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.a2a.sdk</groupId>
+        <groupId>io.github.a2asdk</groupId>
         <artifactId>a2a-java-sdk-parent</artifactId>
         <version>0.2.3.Beta2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
