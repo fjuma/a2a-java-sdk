@@ -11,7 +11,7 @@ on:
 
 env:
   # Tag of the TCK
-  TCK_VERSION: 0.2.3
+  TCK_VERSION: v0.2.3
   # Tells uv to not need a venv, and instead use system
   UV_SYSTEM_PYTHON: 1
 
@@ -29,7 +29,7 @@ jobs:
       - name: Checkout a2a-tck
         uses: actions/checkout@v4
         with:
-          repository: maeste/a2a-tck
+          repository: a2aproject/a2a-tck
           path: tck/a2a-tck
           ref: ${{ env.TCK_VERSION }}
       - name: Set up JDK 17
