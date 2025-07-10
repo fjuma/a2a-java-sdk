@@ -11,55 +11,55 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
+import io.a2a.transport.http.A2AHttpResponse;
 import io.a2a.spec.A2AClientError;
 import io.a2a.spec.A2AClientJSONError;
 import io.a2a.spec.AgentCard;
+import io.a2a.transport.http.JdkA2AHttpTransport;
 import org.junit.jupiter.api.Test;
 
 public class A2ACardResolverTest {
     @Test
     public void testConstructorStripsSlashes() throws Exception {
-        TestHttpClient client = new TestHttpClient();
-        client.body = JsonMessages.AGENT_CARD;
+        TestHttpTransport transport = new TestHttpTransport();
+        transport.body = JsonMessages.AGENT_CARD;
 
-        A2ACardResolver resolver = new A2ACardResolver(client, "http://example.com/");
+        A2ACardResolver resolver = new A2ACardResolver(transport, "http://example.com/");
         AgentCard card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, transport.url);
 
 
-        resolver = new A2ACardResolver(client, "http://example.com");
+        resolver = new A2ACardResolver(transport, "http://example.com");
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, transport.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com/", A2ACardResolver.DEFAULT_AGENT_CARD_PATH);
+        resolver = new A2ACardResolver(transport, "http://example.com/", A2ACardResolver.DEFAULT_AGENT_CARD_PATH);
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, transport.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com", A2ACardResolver.DEFAULT_AGENT_CARD_PATH);
+        resolver = new A2ACardResolver(transport, "http://example.com", A2ACardResolver.DEFAULT_AGENT_CARD_PATH);
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, transport.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com/", A2ACardResolver.DEFAULT_AGENT_CARD_PATH.substring(0));
+        resolver = new A2ACardResolver(transport, "http://example.com/", A2ACardResolver.DEFAULT_AGENT_CARD_PATH.substring(0));
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, transport.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com", A2ACardResolver.DEFAULT_AGENT_CARD_PATH.substring(0));
+        resolver = new A2ACardResolver(transport, "http://example.com", A2ACardResolver.DEFAULT_AGENT_CARD_PATH.substring(0));
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, transport.url);
     }
 
 
     @Test
     public void testGetAgentCardSuccess() throws Exception {
-        TestHttpClient client = new TestHttpClient();
+        TestHttpTransport client = new TestHttpTransport();
         client.body = JsonMessages.AGENT_CARD;
 
         A2ACardResolver resolver = new A2ACardResolver(client, "http://example.com/");
@@ -74,7 +74,7 @@ public class A2ACardResolverTest {
 
     @Test
     public void testGetAgentCardJsonDecodeError() throws Exception {
-        TestHttpClient client = new TestHttpClient();
+        TestHttpTransport client = new TestHttpTransport();
         client.body = "X" + JsonMessages.AGENT_CARD;
 
         A2ACardResolver resolver = new A2ACardResolver(client, "http://example.com/");
@@ -91,7 +91,7 @@ public class A2ACardResolverTest {
 
     @Test
     public void testGetAgentCardRequestError() throws Exception {
-        TestHttpClient client = new TestHttpClient();
+        TestHttpTransport client = new TestHttpTransport();
         client.status = 503;
 
         A2ACardResolver resolver = new A2ACardResolver(client, "http://example.com/");
@@ -105,7 +105,7 @@ public class A2ACardResolverTest {
         assertTrue(msg.contains("503"));
     }
 
-    private static class TestHttpClient implements A2AHttpClient {
+    private static class TestHttpTransport extends JdkA2AHttpTransport {
         int status = 200;
         String body;
         String url;
@@ -120,7 +120,7 @@ public class A2ACardResolverTest {
             return null;
         }
 
-        class TestGetBuilder implements A2AHttpClient.GetBuilder {
+        class TestGetBuilder implements GetBuilder {
 
             @Override
             public A2AHttpResponse get() throws IOException, InterruptedException {

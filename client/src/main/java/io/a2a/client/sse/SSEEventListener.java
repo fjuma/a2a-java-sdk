@@ -7,8 +7,9 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.JSONRPCResponse;
+import io.a2a.spec.SendStreamingMessageResponse;
 import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskStatusUpdateEvent;
 
@@ -26,10 +27,15 @@ public class SSEEventListener {
 
     public void onMessage(String message, Future<Void> completableFuture) {
         try {
-            handleMessage(OBJECT_MAPPER.readTree(message),completableFuture);
+            SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(message, SendStreamingMessageResponse.class);
+            handleMessage(sendStreamingMessageResponse,completableFuture);
         } catch (JsonProcessingException e) {
             log.warning("Failed to parse JSON message: " + message);
         }
+    }
+
+    public void onMessage(JSONRPCResponse<?> response, Future<Void> completableFuture) {
+        handleMessage(response,completableFuture);
     }
 
     public void onError(Throwable throwable, Future<Void> future) {
@@ -37,25 +43,18 @@ public class SSEEventListener {
         future.cancel(true); // close SSE channel
     }
 
-    private void handleMessage(JsonNode jsonNode, Future<Void> future) {
-        try {
-            if (jsonNode.has("error")) {
-                JSONRPCError error = OBJECT_MAPPER.treeToValue(jsonNode.get("error"), JSONRPCError.class);
-                errorHandler.accept(error);
-            } else if (jsonNode.has("result")) {
-                // result can be a Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
-                JsonNode result = jsonNode.path("result");
-                StreamingEventKind event = OBJECT_MAPPER.treeToValue(result, StreamingEventKind.class);
-                eventHandler.accept(event);
-                if (event instanceof TaskStatusUpdateEvent && ((TaskStatusUpdateEvent) event).isFinal()) {
-                    future.cancel(true); // close SSE channel
-                }
-            } else {
-                throw new IllegalArgumentException("Unknown message type");
+    private void handleMessage(JSONRPCResponse<?> response, Future<Void> future) {
+        if (null != response.getError()) {
+            errorHandler.accept(response.getError());
+        } else if (null != response.getResult()) {
+            // result can be a Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
+            StreamingEventKind event = (StreamingEventKind) response.getResult();
+            eventHandler.accept(event);
+            if (event instanceof TaskStatusUpdateEvent && ((TaskStatusUpdateEvent) event).isFinal()) {
+                future.cancel(true); // close SSE channel
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        } else {
+            throw new IllegalArgumentException("Unknown message type");
         }
     }
-
 }

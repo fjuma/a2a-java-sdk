@@ -1,10 +1,12 @@
-package io.a2a.http;
+package io.a2a.transport.http;
+
+import io.a2a.transport.A2ATransport;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public interface A2AHttpClient {
+public interface A2AHttpTransport extends A2ATransport {
 
     GetBuilder createGet();
 

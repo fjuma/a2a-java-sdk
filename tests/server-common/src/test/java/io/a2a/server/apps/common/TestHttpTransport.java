@@ -8,17 +8,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
+import io.a2a.transport.http.JdkA2AHttpTransport;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Alternative;
 
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
+import io.a2a.transport.http.A2AHttpResponse;
 import io.a2a.spec.Task;
 import io.a2a.util.Utils;
 
 @Dependent
 @Alternative
-public class TestHttpClient implements A2AHttpClient {
+public class TestHttpTransport extends JdkA2AHttpTransport {
     final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
     volatile CountDownLatch latch;
 
@@ -32,7 +32,7 @@ public class TestHttpClient implements A2AHttpClient {
         return new TestPostBuilder();
     }
 
-    class TestPostBuilder implements A2AHttpClient.PostBuilder {
+    class TestPostBuilder implements PostBuilder {
         private volatile String body;
         @Override
         public PostBuilder body(String body) {

@@ -1,6 +1,7 @@
 package io.a2a.client;
 
 import static io.a2a.util.Assert.checkNotNullParam;
+import static io.a2a.util.Utils.OBJECT_MAPPER;
 
 import java.io.IOException;
 import java.util.Map;
@@ -11,9 +12,7 @@ import java.util.function.Consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.client.sse.SSEEventListener;
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
-import io.a2a.http.JdkA2AHttpClient;
+import io.a2a.transport.A2ATransport;
 import io.a2a.A2A;
 import io.a2a.spec.A2AClientError;
 import io.a2a.spec.A2AClientJSONError;
@@ -27,7 +26,6 @@ import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCMessage;
-import io.a2a.spec.JSONRPCResponse;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendMessageRequest;
@@ -40,7 +38,7 @@ import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskResubscriptionRequest;
-import io.a2a.util.Utils;
+import io.a2a.transport.http.JdkA2AHttpTransport;
 
 /**
  * An A2A client.
@@ -52,7 +50,7 @@ public class A2AClient {
     private static final TypeReference<CancelTaskResponse> CANCEL_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<GetTaskPushNotificationConfigResponse> GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<SetTaskPushNotificationConfigResponse> SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
-    private final A2AHttpClient httpClient;
+    private final A2ATransport transport;
     private final String agentUrl;
     private AgentCard agentCard;
 
@@ -66,7 +64,7 @@ public class A2AClient {
         checkNotNullParam("agentCard", agentCard);
         this.agentCard = agentCard;
         this.agentUrl = agentCard.url();
-        this.httpClient = new JdkA2AHttpClient();
+        this.transport = new JdkA2AHttpTransport();
     }
 
     /**
@@ -77,13 +75,25 @@ public class A2AClient {
     public A2AClient(String agentUrl) {
         checkNotNullParam("agentUrl", agentUrl);
         this.agentUrl = agentUrl;
-        this.httpClient = new JdkA2AHttpClient();
+        this.transport = new JdkA2AHttpTransport();
+    }
+
+    /**
+     * Create a new A2AClient.
+     *
+     * @param agentUrl the URL for the A2A server this client will be communicating with
+     * @param transport the transport to use
+     */
+    public A2AClient(String agentUrl, A2ATransport transport) {
+        checkNotNullParam("agentUrl", agentUrl);
+        this.agentUrl = agentUrl;
+        this.transport = transport;
     }
 
     /**
      * Fetches the agent card and initialises an A2A client.
      *
-     * @param httpClient the {@link  A2AHttpClient} to use
+     * @param transport the {@link  A2ATransport} to use
      * @param baseUrl the base URL of the agent's host
      * @param agentCardPath the path to the agent card endpoint, relative to the {@code baseUrl}. If {@code null},  the
      *                      value {@link A2ACardResolver#DEFAULT_AGENT_CARD_PATH} will be used
@@ -91,9 +101,9 @@ public class A2AClient {
      * @throws A2AClientError If an HTTP error occurs fetching the card
      * @throws A2AClientJSONError if the agent card response is invalid
      */
-    public static A2AClient getClientFromAgentCardUrl(A2AHttpClient httpClient, String baseUrl,
+    public static A2AClient getClientFromAgentCardUrl(A2ATransport transport, String baseUrl,
                                                       String agentCardPath) throws A2AClientError, A2AClientJSONError {
-        A2ACardResolver resolver = new A2ACardResolver(httpClient, baseUrl, agentCardPath);
+        A2ACardResolver resolver = new A2ACardResolver(transport, baseUrl, agentCardPath);
         AgentCard card = resolver.getAgentCard();
         return new A2AClient(card);
     }
@@ -108,7 +118,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard() throws A2AClientError, A2AClientJSONError {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl);
+            this.agentCard = A2A.getAgentCard(this.transport, this.agentUrl);
         }
         return this.agentCard;
     }
@@ -124,7 +134,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard(String relativeCardPath, Map<String, String> authHeaders) throws A2AClientError, A2AClientJSONError {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl, relativeCardPath, authHeaders);
+            this.agentCard = A2A.getAgentCard(this.transport, this.agentUrl, relativeCardPath, authHeaders);
         }
         return this.agentCard;
     }
@@ -161,8 +171,7 @@ public class A2AClient {
         SendMessageRequest sendMessageRequest = sendMessageRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(sendMessageRequest);
-            return unmarshalResponse(httpResponseBody, SEND_MESSAGE_RESPONSE_REFERENCE);
+            return transport.sendMessage(sendMessageRequest, agentUrl, SEND_MESSAGE_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to send message: " + e);
         }
@@ -213,8 +222,7 @@ public class A2AClient {
         GetTaskRequest getTaskRequest = getTaskRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(getTaskRequest);
-            return unmarshalResponse(httpResponseBody, GET_TASK_RESPONSE_REFERENCE);
+            return transport.sendMessage(getTaskRequest, agentUrl, GET_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to get task: " + e);
         }
@@ -263,8 +271,7 @@ public class A2AClient {
         CancelTaskRequest cancelTaskRequest = cancelTaskRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(cancelTaskRequest);
-            return unmarshalResponse(httpResponseBody, CANCEL_TASK_RESPONSE_REFERENCE);
+            return transport.sendMessage(cancelTaskRequest, agentUrl, CANCEL_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to cancel task: " + e);
         }
@@ -313,8 +320,7 @@ public class A2AClient {
         GetTaskPushNotificationConfigRequest getTaskPushNotificationRequest = getTaskPushNotificationRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(getTaskPushNotificationRequest);
-            return unmarshalResponse(httpResponseBody, GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
+            return transport.sendMessage(getTaskPushNotificationRequest, agentUrl, GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to get task push notification config: " + e);
         }
@@ -356,8 +362,7 @@ public class A2AClient {
         SetTaskPushNotificationConfigRequest setTaskPushNotificationRequest = setTaskPushNotificationRequestBuilder.build();
 
         try {
-            String httpResponseBody = sendPostRequest(setTaskPushNotificationRequest);
-            return unmarshalResponse(httpResponseBody, SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
+            return transport.sendMessage(setTaskPushNotificationRequest, agentUrl, SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to set task push notification config: " + e);
         }
@@ -388,7 +393,7 @@ public class A2AClient {
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
     public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
-                                       Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         checkNotNullParam("messageSendParams", messageSendParams);
         checkNotNullParam("eventHandler", eventHandler);
         checkNotNullParam("errorHandler", errorHandler);
@@ -407,14 +412,12 @@ public class A2AClient {
         SSEEventListener sseEventListener = new SSEEventListener(eventHandler, errorHandler, failureHandler);
         SendStreamingMessageRequest sendStreamingMessageRequest = sendStreamingMessageRequestBuilder.build();
         try {
-            A2AHttpClient.PostBuilder builder = createPostBuilder(sendStreamingMessageRequest);
-            ref.set(builder.postAsyncSSE(
-                    msg -> sseEventListener.onMessage(msg, ref.get()),
+            transport.sendMessageStreaming(sendStreamingMessageRequest, agentUrl, SEND_MESSAGE_RESPONSE_REFERENCE,
+                    response -> sseEventListener.onMessage(response, ref.get()),
                     throwable -> sseEventListener.onError(throwable, ref.get()),
                     () -> {
                         // We don't need to do anything special on completion
-                    }));
-
+                    });
         } catch (IOException e) {
             throw new A2AServerException("Failed to send streaming message request: " + e);
         } catch (InterruptedException e) {
@@ -466,45 +469,16 @@ public class A2AClient {
         SSEEventListener sseEventListener = new SSEEventListener(eventHandler, errorHandler, failureHandler);
         TaskResubscriptionRequest taskResubscriptionRequest = taskResubscriptionRequestBuilder.build();
         try {
-            A2AHttpClient.PostBuilder builder = createPostBuilder(taskResubscriptionRequest);
-            ref.set(builder.postAsyncSSE(
-                    msg -> sseEventListener.onMessage(msg, ref.get()),
+            transport.sendMessageStreaming(taskResubscriptionRequest, agentUrl, GET_TASK_RESPONSE_REFERENCE,
+                    response -> sseEventListener.onMessage(response, ref.get()),
                     throwable -> sseEventListener.onError(throwable, ref.get()),
                     () -> {
                         // We don't need to do anything special on completion
-                    }));
-
+                    });
         } catch (IOException e) {
             throw new A2AServerException("Failed to send task resubscription request: " + e);
         } catch (InterruptedException e) {
             throw new A2AServerException("Task resubscription request timed out: " + e);
         }
-    }
-
-    private String sendPostRequest(Object value) throws IOException, InterruptedException {
-        A2AHttpClient.PostBuilder builder = createPostBuilder(value);
-        A2AHttpResponse response = builder.post();
-        if (!response.success()) {
-            throw new IOException("Request failed " + response.status());
-        }
-        return response.body();
-    }
-
-    private A2AHttpClient.PostBuilder createPostBuilder(Object value) throws JsonProcessingException {
-        return httpClient.createPost()
-                .url(agentUrl)
-                .addHeader("Content-Type", "application/json")
-                .body(Utils.OBJECT_MAPPER.writeValueAsString(value));
-
-    }
-
-    private <T extends JSONRPCResponse> T unmarshalResponse(String response, TypeReference<T> typeReference)
-            throws A2AServerException, JsonProcessingException {
-        T value = Utils.unmarshalFrom(response, typeReference);
-        JSONRPCError error = value.getError();
-        if (error != null) {
-            throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""));
-        }
-        return value;
     }
 }

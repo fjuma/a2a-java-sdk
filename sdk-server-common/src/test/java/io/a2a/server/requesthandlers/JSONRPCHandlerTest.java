@@ -22,10 +22,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.a2a.spec.InternalError;
+import io.a2a.transport.http.JdkA2AHttpTransport;
 import jakarta.enterprise.context.Dependent;
 
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
+import io.a2a.transport.http.A2AHttpResponse;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventConsumer;
@@ -47,7 +47,6 @@ import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
-import io.a2a.spec.InternalError;
 import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
@@ -104,7 +103,7 @@ public class JSONRPCHandlerTest {
     AgentExecutorMethod agentExecutorExecute;
     AgentExecutorMethod agentExecutorCancel;
     private InMemoryQueueManager queueManager;
-    private TestHttpClient httpClient;
+    private TestHttpTransport transport;
 
     private final Executor internalExecutor = Executors.newCachedThreadPool();
 
@@ -129,8 +128,8 @@ public class JSONRPCHandlerTest {
 
         taskStore = new InMemoryTaskStore();
         queueManager = new InMemoryQueueManager();
-        httpClient = new TestHttpClient();
-        PushNotifier pushNotifier = new InMemoryPushNotifier(httpClient);
+        transport = new TestHttpTransport();
+        PushNotifier pushNotifier = new InMemoryPushNotifier(transport);
 
         requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier, internalExecutor);
     }
@@ -693,7 +692,7 @@ public class JSONRPCHandlerTest {
         final List<StreamingEventKind> results = Collections.synchronizedList(new ArrayList<>());
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(6);
-        httpClient.latch = latch;
+        transport.latch = latch;
 
         Executors.newSingleThreadExecutor().execute(() -> {
             response.subscribe(new Flow.Subscriber<>() {
@@ -727,15 +726,15 @@ public class JSONRPCHandlerTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         subscriptionRef.get().cancel();
         assertEquals(3, results.size());
-        assertEquals(3, httpClient.tasks.size());
+        assertEquals(3, transport.tasks.size());
 
-        Task curr = httpClient.tasks.get(0);
+        Task curr = transport.tasks.get(0);
         assertEquals(MINIMAL_TASK.getId(), curr.getId());
         assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
         assertEquals(MINIMAL_TASK.getStatus().state(), curr.getStatus().state());
         assertEquals(0, curr.getArtifacts() == null ? 0 : curr.getArtifacts().size());
 
-        curr = httpClient.tasks.get(1);
+        curr = transport.tasks.get(1);
         assertEquals(MINIMAL_TASK.getId(), curr.getId());
         assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
         assertEquals(MINIMAL_TASK.getStatus().state(), curr.getStatus().state());
@@ -743,7 +742,7 @@ public class JSONRPCHandlerTest {
         assertEquals(1, curr.getArtifacts().get(0).parts().size());
         assertEquals("text", ((TextPart)curr.getArtifacts().get(0).parts().get(0)).getText());
 
-        curr = httpClient.tasks.get(2);
+        curr = transport.tasks.get(2);
         assertEquals(MINIMAL_TASK.getId(), curr.getId());
         assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
         assertEquals(TaskState.COMPLETED, curr.getStatus().state());
@@ -1265,7 +1264,7 @@ public class JSONRPCHandlerTest {
 
     @Dependent
     @IfBuildProfile("test")
-    private static class TestHttpClient implements A2AHttpClient {
+    private static class TestHttpTransport extends JdkA2AHttpTransport {
         final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
         volatile CountDownLatch latch;
 
@@ -1279,7 +1278,7 @@ public class JSONRPCHandlerTest {
             return new TestPostBuilder();
         }
 
-        class TestPostBuilder implements A2AHttpClient.PostBuilder {
+        class TestPostBuilder implements PostBuilder {
             private volatile String body;
             @Override
             public PostBuilder body(String body) {
