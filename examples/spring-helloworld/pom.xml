@@ -29,7 +29,7 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>io.a2a.sdk</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-server-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
