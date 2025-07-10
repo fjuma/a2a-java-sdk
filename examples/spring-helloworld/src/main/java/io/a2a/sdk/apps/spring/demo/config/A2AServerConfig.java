@@ -1,10 +1,10 @@
 package io.a2a.sdk.apps.spring.demo.config;
 
+import io.a2a.A2A;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
 import io.a2a.server.tasks.TaskUpdater;
-import io.a2a.spec.A2A;
 import io.a2a.spec.JSONRPCError;
 
 import org.springframework.context.annotation.Bean;
