@@ -39,22 +39,26 @@ public class A2ACardResolverTest {
 
         assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
+        // baseUrl with trailing slash, agentCardParth with leading slash
         resolver = new A2ACardResolver(client, "http://example.com/", AGENT_CARD_PATH);
         card = resolver.getAgentCard();
 
         assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
+        // baseUrl without trailing slash, agentCardPath with leading slash
         resolver = new A2ACardResolver(client, "http://example.com", AGENT_CARD_PATH);
         card = resolver.getAgentCard();
 
         assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com/", AGENT_CARD_PATH.substring(0));
+        // baseUrl with trailing slash, agentCardPath without leading slash
+        resolver = new A2ACardResolver(client, "http://example.com/", AGENT_CARD_PATH.substring(1));
         card = resolver.getAgentCard();
 
         assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com", AGENT_CARD_PATH.substring(0));
+        // baseUrl without trailing slash, agentCardPath without leading slash
+        resolver = new A2ACardResolver(client, "http://example.com", AGENT_CARD_PATH.substring(1));
         card = resolver.getAgentCard();
 
         assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
