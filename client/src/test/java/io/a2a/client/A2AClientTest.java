@@ -442,6 +442,7 @@ public class A2AClientTest {
         assertEquals(outputModes, skills.get(1).outputModes());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
         assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
+        assertEquals("0.2.5", agentCard.protocolVersion());
     }
 
     @Test
@@ -514,6 +515,7 @@ public class A2AClientTest {
         assertEquals(List.of("extended"), skills.get(2).tags());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
         assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
+        assertEquals("0.2.5", agentCard.protocolVersion());
     }
 
     @Test

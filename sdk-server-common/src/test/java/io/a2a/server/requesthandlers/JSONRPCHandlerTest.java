@@ -1256,6 +1256,7 @@ public class JSONRPCHandlerTest {
                 .defaultInputModes(new ArrayList<>())
                 .defaultOutputModes(new ArrayList<>())
                 .skills(new ArrayList<>())
+                .protocolVersion("0.2.5")
                 .build();
     }
 

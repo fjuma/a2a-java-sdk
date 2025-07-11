@@ -32,6 +32,7 @@ public class AgentCardProducer {
                 .defaultInputModes(Collections.singletonList("text"))
                 .defaultOutputModes(Collections.singletonList("text"))
                 .skills(new ArrayList<>())
+                .protocolVersion("0.2.5")
                 .build();
     }
 }

@@ -67,7 +67,8 @@ public class JsonMessages {
                     ]
                   }
                 ],
-                "supportsAuthenticatedExtendedCard": true
+                "supportsAuthenticatedExtendedCard": true,
+                "protocolVersion": "0.2.5"
               }""";
 
     static final String AUTHENTICATION_EXTENDED_AGENT_CARD = """
@@ -137,7 +138,8 @@ public class JsonMessages {
                     "tags": ["extended"]
                   }
                 ],
-                "supportsAuthenticatedExtendedCard": true
+                "supportsAuthenticatedExtendedCard": true,
+                "protocolVersion": "0.2.5"
               }""";
 
 
