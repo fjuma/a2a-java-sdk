@@ -38,7 +38,7 @@ public abstract class JSONRPCRequestDeserializerBase<T> extends StdDeserializer<
             case SetTaskPushNotificationConfigRequest.METHOD:
                 return new SetTaskPushNotificationConfigRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
             case GetTaskPushNotificationConfigRequest.METHOD:
-                return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, GetTaskPushNotificationConfigParams.class));
             case SendMessageRequest.METHOD:
                 return new SendMessageRequest(jsonrpc, id, method, getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
             case TaskResubscriptionRequest.METHOD:

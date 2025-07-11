@@ -38,7 +38,7 @@ public class NonStreamingJSONRPCRequestDeserializer extends JSONRPCRequestDeseri
                         getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
             case GetTaskPushNotificationConfigRequest.METHOD:
                 return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method,
-                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, GetTaskPushNotificationConfigParams.class));
             case SendMessageRequest.METHOD:
                 return new SendMessageRequest(jsonrpc, id, method,
                         getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));

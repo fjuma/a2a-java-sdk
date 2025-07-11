@@ -21,6 +21,7 @@ import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -278,33 +279,33 @@ public class A2AClient {
      * @throws A2AServerException if getting the push notification configuration fails for any reason
      */
     public GetTaskPushNotificationConfigResponse getTaskPushNotificationConfig(String id) throws A2AServerException {
-        return getTaskPushNotificationConfig(null, new TaskIdParams(id));
+        return getTaskPushNotificationConfig(null, new GetTaskPushNotificationConfigParams(id));
     }
 
     /**
      * Get the push notification configuration for a task.
      *
-     * @param taskIdParams the params for the task
+     * @param getTaskPushNotificationConfigParams the params for the task
      * @return the response containing the push notification configuration
      * @throws A2AServerException if getting the push notification configuration fails for any reason
      */
-    public GetTaskPushNotificationConfigResponse getTaskPushNotificationConfig(TaskIdParams taskIdParams) throws A2AServerException {
-        return getTaskPushNotificationConfig(null, taskIdParams);
+    public GetTaskPushNotificationConfigResponse getTaskPushNotificationConfig(GetTaskPushNotificationConfigParams getTaskPushNotificationConfigParams) throws A2AServerException {
+        return getTaskPushNotificationConfig(null, getTaskPushNotificationConfigParams);
     }
 
     /**
      * Get the push notification configuration for a task.
      *
      * @param requestId the request ID to use
-     * @param taskIdParams the params for the task
+     * @param getTaskPushNotificationConfigParams the params for the task
      * @return the response containing the push notification configuration
      * @throws A2AServerException if getting the push notification configuration fails for any reason
      */
-    public GetTaskPushNotificationConfigResponse getTaskPushNotificationConfig(String requestId, TaskIdParams taskIdParams) throws A2AServerException {
+    public GetTaskPushNotificationConfigResponse getTaskPushNotificationConfig(String requestId, GetTaskPushNotificationConfigParams getTaskPushNotificationConfigParams) throws A2AServerException {
         GetTaskPushNotificationConfigRequest.Builder getTaskPushNotificationRequestBuilder = new GetTaskPushNotificationConfigRequest.Builder()
                 .jsonrpc(JSONRPCMessage.JSONRPC_VERSION)
                 .method(GetTaskPushNotificationConfigRequest.METHOD)
-                .params(taskIdParams);
+                .params(getTaskPushNotificationConfigParams);
 
         if (requestId != null) {
             getTaskPushNotificationRequestBuilder.id(requestId);

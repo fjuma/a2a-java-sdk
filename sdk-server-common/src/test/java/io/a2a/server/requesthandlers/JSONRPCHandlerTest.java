@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.InternalError;
 import jakarta.enterprise.context.Dependent;
 
@@ -641,7 +642,7 @@ public class JSONRPCHandlerTest {
         handler.setPushNotification(request);
 
         GetTaskPushNotificationConfigRequest getRequest =
-                new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+                new GetTaskPushNotificationConfigRequest("111", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
         GetTaskPushNotificationConfigResponse getResponse = handler.getPushNotification(getRequest);
 
         assertEquals(taskPushConfig, getResponse.getResult());
@@ -1052,7 +1053,7 @@ public class JSONRPCHandlerTest {
         taskStore.save(MINIMAL_TASK);
 
         GetTaskPushNotificationConfigRequest request =
-                new GetTaskPushNotificationConfigRequest("id", new TaskIdParams(MINIMAL_TASK.getId()));
+                new GetTaskPushNotificationConfigRequest("id", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
         GetTaskPushNotificationConfigResponse response = handler.getPushNotification(request);
 
         assertNotNull(response.getError());
