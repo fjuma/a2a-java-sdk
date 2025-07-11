@@ -8,6 +8,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -212,16 +213,14 @@ public class A2AServerRoutes {
     }
 
     private static boolean isStreamingRequest(String requestBody) {
-        return requestBody.contains(SendStreamingMessageRequest.METHOD) ||
-                requestBody.contains(TaskResubscriptionRequest.METHOD);
-    }
-
-    private static boolean isNonStreamingRequest(String requestBody) {
-        return requestBody.contains(GetTaskRequest.METHOD) ||
-                requestBody.contains(CancelTaskRequest.METHOD) ||
-                requestBody.contains(SendMessageRequest.METHOD) ||
-                requestBody.contains(SetTaskPushNotificationConfigRequest.METHOD) ||
-                requestBody.contains(GetTaskPushNotificationConfigRequest.METHOD);
+        try {
+            JsonNode node = Utils.OBJECT_MAPPER.readTree(requestBody);
+            JsonNode method = node != null ? node.get("method") : null;
+            return method != null && (SendStreamingMessageRequest.METHOD.equals(method.asText())
+                    || TaskResubscriptionRequest.METHOD.equals(method.asText()));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     static void setStreamingMultiSseSupportSubscribedRunnable(Runnable runnable) {
