@@ -18,9 +18,10 @@ public class A2ACardResolver {
     private final String url;
     private final Map<String, String> authHeaders;
 
-    static String DEFAULT_AGENT_CARD_PATH = "/.well-known/agent.json";
+    private static final String DEFAULT_AGENT_CARD_PATH = "/.well-known/agent.json";
 
-    static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
+    private static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
+
     /**
      * @param httpClient the http client to use
      * @param baseUrl the base URL for the agent whose agent card we want to retrieve
