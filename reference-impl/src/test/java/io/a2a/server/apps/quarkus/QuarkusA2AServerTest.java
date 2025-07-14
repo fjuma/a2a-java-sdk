@@ -11,18 +11,10 @@ import io.quarkus.test.junit.QuarkusTest;
 public class QuarkusA2AServerTest extends AbstractA2AServerTest {
 
     @Inject
-    TaskStore taskStore;
-
-    @Inject
     InMemoryQueueManager queueManager;
 
     public QuarkusA2AServerTest() {
         super(8081);
-    }
-
-    @Override
-    protected TaskStore getTaskStore() {
-        return taskStore;
     }
 
     @Override
