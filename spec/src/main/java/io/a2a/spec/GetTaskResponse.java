@@ -15,7 +15,7 @@ public final class GetTaskResponse extends JSONRPCResponse<Task> {
     @JsonCreator
     public GetTaskResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                            @JsonProperty("result") Task result, @JsonProperty("error") JSONRPCError error) {
-        super(jsonrpc, id, result, error);
+        super(jsonrpc, id, result, error, Task.class);
     }
 
     public GetTaskResponse(Object id, JSONRPCError error) {

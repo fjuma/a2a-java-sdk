@@ -17,7 +17,7 @@ public final class JSONRPCErrorResponse extends JSONRPCResponse<Void> {
     @JsonCreator
     public JSONRPCErrorResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                 @JsonProperty("result") Void result, @JsonProperty("error") JSONRPCError error) {
-        super(jsonrpc, id, result, error);
+        super(jsonrpc, id, result, error, Void.class);
         Assert.checkNotNullParam("error", error);
     }
 

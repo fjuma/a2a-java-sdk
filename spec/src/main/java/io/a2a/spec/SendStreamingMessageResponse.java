@@ -18,11 +18,7 @@ public final class SendStreamingMessageResponse extends JSONRPCResponse<Streamin
     @JsonCreator
     public SendStreamingMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                         @JsonProperty("result") StreamingEventKind result, @JsonProperty("error") JSONRPCError error) {
-        this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        Assert.isNullOrStringOrInteger(id);
-        this.id = id;
-        this.result = result;
-        this.error = error;
+        super(jsonrpc, id, result, error, StreamingEventKind.class);
     }
 
     public SendStreamingMessageResponse(Object id, StreamingEventKind result) {

@@ -18,11 +18,7 @@ public final class SendMessageResponse extends JSONRPCResponse<EventKind> {
     @JsonCreator
     public SendMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                @JsonProperty("result") EventKind result, @JsonProperty("error") JSONRPCError error) {
-        this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        Assert.isNullOrStringOrInteger(id);
-        this.id = id;
-        this.result = result;
-        this.error = error;
+        super(jsonrpc, id, result, error, EventKind.class);
     }
 
     public SendMessageResponse(Object id, EventKind result) {

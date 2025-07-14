@@ -16,7 +16,7 @@ public final class DeleteTaskPushNotificationConfigResponse extends JSONRPCRespo
     public DeleteTaskPushNotificationConfigResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                                     @JsonProperty("result") Void result,
                                                     @JsonProperty("error") JSONRPCError error) {
-        super(jsonrpc, id, result, error);
+        super(jsonrpc, id, result, error, Void.class);
     }
 
     public DeleteTaskPushNotificationConfigResponse(Object id, JSONRPCError error) {

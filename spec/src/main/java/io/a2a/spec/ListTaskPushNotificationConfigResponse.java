@@ -16,7 +16,7 @@ public final class ListTaskPushNotificationConfigResponse extends JSONRPCRespons
     public ListTaskPushNotificationConfigResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                                   @JsonProperty("result") TaskPushNotificationConfig result,
                                                   @JsonProperty("error") JSONRPCError error) {
-        super(jsonrpc, id, result, error);
+        super(jsonrpc, id, result, error, TaskPushNotificationConfig.class);
     }
 
     public ListTaskPushNotificationConfigResponse(Object id, JSONRPCError error) {
