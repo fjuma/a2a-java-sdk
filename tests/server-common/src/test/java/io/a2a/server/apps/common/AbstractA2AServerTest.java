@@ -9,6 +9,7 @@ import static org.wildfly.common.Assert.assertNotNull;
 import static org.wildfly.common.Assert.assertTrue;
 
 import java.io.EOFException;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,13 +21,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.a2a.server.events.InMemoryQueueManager;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
@@ -641,7 +642,8 @@ public abstract class AbstractA2AServerTest {
             TaskResubscriptionRequest taskResubscriptionRequest = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
 
             // Count down the latch when the MultiSseSupport on the server has started subscribing
-            setStreamingSubscribedRunnable(taskResubscriptionRequestSent::countDown);
+            awaitStreamingSubscription()
+                    .whenComplete((unused, throwable) -> taskResubscriptionRequestSent.countDown());
 
             CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(taskResubscriptionRequest, null);
 
@@ -650,7 +652,6 @@ public abstract class AbstractA2AServerTest {
             responseFuture.thenAccept(response -> {
 
                 if (response.statusCode() != 200) {
-                    //errorRef.set(new IllegalStateException("Status code was " + response.statusCode()));
                     throw new IllegalStateException("Status code was " + response.statusCode());
                 }
                 try {
@@ -729,7 +730,7 @@ public abstract class AbstractA2AServerTest {
             assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
             assertNotNull(taskStatusUpdateEvent.getStatus().timestamp());
         } finally {
-            setStreamingSubscribedRunnable(null);
+            //setStreamingSubscribedRunnable(null);
             deleteTaskInTaskStore(MINIMAL_TASK.getId());
             executorService.shutdown();
             if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -956,7 +957,7 @@ public abstract class AbstractA2AServerTest {
     }
 
     protected void enqueueEventOnServer(Event event) throws Exception {
-        String path = null;
+        String path;
         if (event instanceof TaskArtifactUpdateEvent e) {
             path = "test/queue/enqueueTaskArtifactUpdateEvent/" + e.getTaskId();
         } else if (event instanceof TaskStatusUpdateEvent e) {
@@ -979,7 +980,42 @@ public abstract class AbstractA2AServerTest {
         }
     }
 
-    protected abstract void setStreamingSubscribedRunnable(Runnable runnable);
+    private CompletableFuture<Void> awaitStreamingSubscription() {
+        int cnt = getStreamingSubscribedCount();
+        AtomicInteger initialCount = new AtomicInteger(cnt);
+
+        return CompletableFuture.runAsync(() -> {
+            try {
+                while (true) {
+                    int count = getStreamingSubscribedCount();
+                    if (count > initialCount.get()) {
+                        break;
+                    }
+                    Thread.sleep(500);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
+
+    private int getStreamingSubscribedCount() {
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + serverPort + "/test/streamingSubscribedCount"))
+                .GET()
+                .build();
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            String body = response.body().trim();
+            System.out.println(body);
+            return Integer.valueOf(body);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static class BreakException extends RuntimeException {
 

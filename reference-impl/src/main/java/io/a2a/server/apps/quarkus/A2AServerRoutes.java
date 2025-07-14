@@ -8,7 +8,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -17,8 +16,10 @@ import jakarta.ws.rs.core.Response;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.a2a.server.ExtendedAgentCard;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
+import io.a2a.server.util.async.Internal;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
@@ -44,7 +45,6 @@ import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
-import io.a2a.server.util.async.Internal;
 import io.quarkus.vertx.web.Body;
 import io.quarkus.vertx.web.ReactiveRoutes;
 import io.quarkus.vertx.web.Route;
@@ -69,6 +69,7 @@ public class A2AServerRoutes {
     Instance<AgentCard> extendedAgentCard;
 
     // Hook so testing can wait until the MultiSseSupport is subscribed.
+    // Without this we get intermittent failures
     private static volatile Runnable streamingMultiSseSupportSubscribedRunnable;
 
     @Inject

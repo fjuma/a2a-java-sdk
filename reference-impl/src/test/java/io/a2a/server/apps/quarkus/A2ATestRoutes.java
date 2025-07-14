@@ -4,6 +4,9 @@ import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -25,6 +28,17 @@ public class A2ATestRoutes {
     @Inject
     TestUtilsBean testUtilsBean;
 
+    @Inject
+    A2AServerRoutes a2AServerRoutes;
+
+    AtomicInteger streamingSubscribedCount = new AtomicInteger(0);
+
+    @PostConstruct
+    public void init() {
+        A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(() -> streamingSubscribedCount.incrementAndGet());
+    }
+
+
     @Route(path = "/test/task", methods = {Route.HttpMethod.POST}, consumes = {APPLICATION_JSON}, type = Route.HandlerType.BLOCKING)
     public void saveTask(@Body String body, RoutingContext rc) {
         try {
@@ -33,7 +47,7 @@ public class A2ATestRoutes {
             rc.response()
                 .setStatusCode(200)
                 .end();
-    } catch (Throwable t) {
+        } catch (Throwable t) {
             errorResponse(t, rc);
         }
     }
@@ -116,6 +130,13 @@ public class A2ATestRoutes {
         } catch (Throwable t) {
             errorResponse(t, rc);
         }
+    }
+
+    @Route(path = "test/streamingSubscribedCount", methods = {Route.HttpMethod.GET}, produces = {TEXT_PLAIN})
+    public void getStreamingSubscribedCount(RoutingContext rc) {
+        rc.response()
+                .setStatusCode(200)
+                .end(String.valueOf(streamingSubscribedCount.get()));
     }
 
     private void errorResponse(Throwable t, RoutingContext rc) {
