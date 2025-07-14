@@ -630,7 +630,7 @@ public abstract class AbstractA2AServerTest {
             // attempting to send a streaming message instead of explicitly calling queueManager#createOrTap
             // does not work because after the message is sent, the queue becomes null but task resubscription
             // requires the queue to still be active
-            getQueueManager().createOrTap(MINIMAL_TASK.getId());
+            ensureQueueForTask(MINIMAL_TASK.getId());
 
             CountDownLatch taskResubscriptionRequestSent = new CountDownLatch(1);
             CountDownLatch taskResubscriptionResponseReceived = new CountDownLatch(2);
@@ -701,7 +701,7 @@ public abstract class AbstractA2AServerTest {
                                 .build());
 
                 for (Event event : events) {
-                    getQueueManager().get(MINIMAL_TASK.getId()).enqueueEvent(event);
+                    enqueueEventOnServer(event);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -941,7 +941,43 @@ public abstract class AbstractA2AServerTest {
         }
     }
 
-    protected abstract InMemoryQueueManager getQueueManager();
+    protected void ensureQueueForTask(String taskId) throws Exception {
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + serverPort + "/test/queue/ensure/" + taskId))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() != 200) {
+            throw new RuntimeException(response.statusCode() + ": Deleting task failed!" + response.body());
+        }
+    }
+
+    protected void enqueueEventOnServer(Event event) throws Exception {
+        String path = null;
+        if (event instanceof TaskArtifactUpdateEvent e) {
+            path = "test/queue/enqueueTaskArtifactUpdateEvent/" + e.getTaskId();
+        } else if (event instanceof TaskStatusUpdateEvent e) {
+            path = "test/queue/enqueueTaskStatusUpdateEvent/" + e.getTaskId();
+        } else {
+            throw new RuntimeException("Unknown event type " + event.getClass() + ". If you need the ability to" +
+                    " handle more types, please add the REST endpoints.");
+        }
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + serverPort + "/" + path))
+                .POST(HttpRequest.BodyPublishers.ofString(Utils.OBJECT_MAPPER.writeValueAsString(event)))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() != 200) {
+            throw new RuntimeException(response.statusCode() + ": Deleting task failed!" + response.body());
+        }
+    }
 
     protected abstract void setStreamingSubscribedRunnable(Runnable runnable);
 

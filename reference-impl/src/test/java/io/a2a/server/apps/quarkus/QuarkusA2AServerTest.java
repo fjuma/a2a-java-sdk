@@ -10,16 +10,8 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 public class QuarkusA2AServerTest extends AbstractA2AServerTest {
 
-    @Inject
-    InMemoryQueueManager queueManager;
-
     public QuarkusA2AServerTest() {
         super(8081);
-    }
-
-    @Override
-    protected InMemoryQueueManager getQueueManager() {
-        return queueManager;
     }
 
     @Override

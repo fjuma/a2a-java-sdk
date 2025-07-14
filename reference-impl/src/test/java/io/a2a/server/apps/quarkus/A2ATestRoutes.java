@@ -9,12 +9,17 @@ import jakarta.inject.Singleton;
 
 import io.a2a.server.apps.common.TestUtilsBean;
 import io.a2a.spec.Task;
+import io.a2a.spec.TaskArtifactUpdateEvent;
+import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.util.Utils;
 import io.quarkus.vertx.web.Body;
 import io.quarkus.vertx.web.Param;
 import io.quarkus.vertx.web.Route;
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * Exposes the {@link TestUtilsBean} via REST using Quarkus Reactive Routes
+ */
 @Singleton
 public class A2ATestRoutes {
     @Inject
@@ -67,6 +72,46 @@ public class A2ATestRoutes {
             rc.response()
                     .setStatusCode(200)
                     .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                    .end();
+        } catch (Throwable t) {
+            errorResponse(t, rc);
+        }
+    }
+
+    @Route(path = "test/queue/ensure/:taskId", methods = {Route.HttpMethod.POST})
+    public void ensureTaskQueue(@Param String taskId, RoutingContext rc) {
+        try {
+            testUtilsBean.ensureQueue(taskId);
+            rc.response()
+                    .setStatusCode(200)
+                    .end();
+        } catch (Throwable t) {
+            errorResponse(t, rc);
+        }
+    }
+
+    @Route(path = "test/queue/enqueueTaskStatusUpdateEvent/:taskId", methods = {Route.HttpMethod.POST})
+    public void enqueueTaskStatusUpdateEvent(@Param String taskId, @Body String body, RoutingContext rc) {
+
+        try {
+            TaskStatusUpdateEvent event = Utils.OBJECT_MAPPER.readValue(body, TaskStatusUpdateEvent.class);
+            testUtilsBean.enqueueEvent(taskId, event);
+            rc.response()
+                    .setStatusCode(200)
+                    .end();
+        } catch (Throwable t) {
+            errorResponse(t, rc);
+        }
+    }
+
+    @Route(path = "test/queue/enqueueTaskArtifactUpdateEvent/:taskId", methods = {Route.HttpMethod.POST})
+    public void enqueueTaskArtifactUpdateEvent(@Param String taskId, @Body String body, RoutingContext rc) {
+
+        try {
+            TaskArtifactUpdateEvent event = Utils.OBJECT_MAPPER.readValue(body, TaskArtifactUpdateEvent.class);
+            testUtilsBean.enqueueEvent(taskId, event);
+            rc.response()
+                    .setStatusCode(200)
                     .end();
         } catch (Throwable t) {
             errorResponse(t, rc);
