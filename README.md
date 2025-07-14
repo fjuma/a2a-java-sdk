@@ -33,32 +33,23 @@ The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A)
 - [Add a class that creates an A2A Agent Card](#2-add-a-class-that-creates-an-a2a-agent-card)
 - [Add a class that creates an A2A Agent Executor](#3-add-a-class-that-creates-an-a2a-agent-executor)
 
-### 1. Add an A2A Java SDK Server Maven dependency to your project
+### 1. Add the A2A Java SDK Server Maven dependency to your project
 
 Adding a dependency on an A2A Java SDK Server will provide access to the core classes that make up the A2A specification
 and allow you to run your agentic Java application as an A2A server agent.
 
-The A2A Java SDK provides two A2A server endpoint implementations, one based on Jakarta REST (`a2a-java-sdk-server-jakarta`) and one based on Quarkus Reactive Routes (`a2a-java-sdk-server-quarkus`). You can choose the one that best fits your application.
+The A2A Java SDK provides a [reference A2A server implementation](reference-impl/README.md) based on [Quarkus](https://quarkus.io) for use with our tests and examples. However, the project is designed in such a way that it is trivial to integrate with various Java runtimes.
 
-Add **one** of the following dependencies to your project:
+[Server Integrations](#server-integrations) contains a list of community contributed integrations of the server with various runtimes. You might be able to use one of these for your target runtime, or you can use them as inspiration to create your own.
+
+To use the reference implementation add the following dependency to your project:
 
 > *⚠️ The `io.github.a2asdk` `groupId` below is temporary and will likely change for future releases.*
 
 ```xml
 <dependency>
     <groupId>io.github.a2asdk</groupId>
-    <artifactId>a2a-java-sdk-server-jakarta</artifactId>
-    <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases --> 
-    <version>${io.a2a.sdk.version}</version>
-</dependency>
-```
-
-OR
-
-```xml
-<dependency>
-    <groupId>io.github.a2asdk</groupId>
-    <artifactId>a2a-java-sdk-server-quarkus</artifactId>
+    <artifactId>a2a-java-reference-server</artifactId>
     <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases --> 
     <version>${io.a2a.sdk.version}</version>
 </dependency>
@@ -371,6 +362,14 @@ This project is licensed under the terms of the [Apache 2.0 License](LICENSE).
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
+## Server Integrations
+The following list contains community contributed integrations with various Java Runtimes.
+
+To contribute an integration, please see [CONTRIBUTING_INTEGRATIONS.md](CONTRIBUTING_INTEGRATIONS.md).
+
+* [reference-impl/README.md](reference-impl/README.md) - Reference implementation, based on Quarkus.
+* https://github.com/wildfly-extras/a2a-java-sdk-server-jakarta - This integration is based on Jakarta EE, and should work in all runtimes supporting the [Jakarta EE Web Profile](https://jakarta.ee/specifications/webprofile/).
 
 
 

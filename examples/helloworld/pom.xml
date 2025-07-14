@@ -33,7 +33,7 @@
             </dependency>
             <dependency>
                 <groupId>io.github.a2asdk</groupId>
-                <artifactId>a2a-java-sdk-server-quarkus</artifactId>
+                <artifactId>a2a-java-reference-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

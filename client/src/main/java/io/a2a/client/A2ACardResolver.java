@@ -3,6 +3,8 @@ package io.a2a.client;
 import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,14 +20,16 @@ public class A2ACardResolver {
     private final String url;
     private final Map<String, String> authHeaders;
 
-    static String DEFAULT_AGENT_CARD_PATH = "/.well-known/agent.json";
+    private static final String DEFAULT_AGENT_CARD_PATH = "/.well-known/agent.json";
 
-    static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
+    private static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
+
     /**
      * @param httpClient the http client to use
      * @param baseUrl the base URL for the agent whose agent card we want to retrieve
+     * @throws A2AClientError if the URL for the agent is invalid
      */
-    public A2ACardResolver(A2AHttpClient httpClient, String baseUrl) {
+    public A2ACardResolver(A2AHttpClient httpClient, String baseUrl) throws A2AClientError {
         this(httpClient, baseUrl, null, null);
     }
 
@@ -34,8 +38,9 @@ public class A2ACardResolver {
      * @param baseUrl the base URL for the agent whose agent card we want to retrieve
      * @param agentCardPath optional path to the agent card endpoint relative to the base
      *                         agent URL, defaults to ".well-known/agent.json"
+     * @throws A2AClientError if the URL for the agent is invalid
      */
-    public A2ACardResolver(A2AHttpClient httpClient, String baseUrl, String agentCardPath) {
+    public A2ACardResolver(A2AHttpClient httpClient, String baseUrl, String agentCardPath) throws A2AClientError {
         this(httpClient, baseUrl, agentCardPath, null);
     }
 
@@ -45,17 +50,17 @@ public class A2ACardResolver {
      * @param agentCardPath optional path to the agent card endpoint relative to the base
      *                         agent URL, defaults to ".well-known/agent.json"
      * @param authHeaders the HTTP authentication headers to use. May be {@code null}
+     * @throws A2AClientError if the URL for the agent is invalid
      */
-    public A2ACardResolver(A2AHttpClient httpClient, String baseUrl, String agentCardPath, Map<String, String> authHeaders) {
+    public A2ACardResolver(A2AHttpClient httpClient, String baseUrl, String agentCardPath,
+                           Map<String, String> authHeaders) throws A2AClientError {
         this.httpClient = httpClient;
-        if (!baseUrl.endsWith("/")) {
-            baseUrl += "/";
-        }
         agentCardPath = agentCardPath == null || agentCardPath.isEmpty() ? DEFAULT_AGENT_CARD_PATH : agentCardPath;
-        if (agentCardPath.startsWith("/")) {
-            agentCardPath = agentCardPath.substring(1);
+        try {
+            this.url = new URI(baseUrl).resolve(agentCardPath).toString();
+        } catch (URISyntaxException e) {
+            throw new A2AClientError("Invalid agent URL", e);
         }
-        this.url = baseUrl + agentCardPath;
         this.authHeaders = authHeaders;
     }
 

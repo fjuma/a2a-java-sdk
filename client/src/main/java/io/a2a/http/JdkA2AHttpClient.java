@@ -141,7 +141,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
                 Consumer<String> messageConsumer,
                 Consumer<Throwable> errorConsumer,
                 Runnable completeRunnable) throws IOException, InterruptedException {
-            HttpRequest request = createRequestBuilder(false)
+            HttpRequest request = createRequestBuilder(true)
                     .build();
             return super.asyncRequest(request, messageConsumer, errorConsumer, completeRunnable);
         }
@@ -180,7 +180,7 @@ public class JdkA2AHttpClient implements A2AHttpClient {
                 Consumer<String> messageConsumer,
                 Consumer<Throwable> errorConsumer,
                 Runnable completeRunnable) throws IOException, InterruptedException {
-            HttpRequest request = createRequestBuilder(false)
+            HttpRequest request = createRequestBuilder(true)
                     .build();
             return super.asyncRequest(request, messageConsumer, errorConsumer, completeRunnable);
         }

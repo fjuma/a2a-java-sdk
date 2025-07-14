@@ -4,6 +4,7 @@ import static io.a2a.server.util.async.AsyncUtils.consumer;
 import static io.a2a.server.util.async.AsyncUtils.createTubeConfig;
 import static io.a2a.server.util.async.AsyncUtils.processor;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -100,11 +101,7 @@ public class ResultAggregator {
                         // new request is expected in order for the agent to make progress,
                         // so the agent should exit.
 
-                        // TODO There is the following line in the Python code I don't totally get
-                        //      asyncio.create_task(self._continue_consuming(event_stream))
-                        //  I think it means the continueConsuming() call should be done in another thread
-                        continueConsuming(all);
-
+                        CompletableFuture.runAsync(() -> continueConsuming(all));
                         interrupted.set(true);
                         return false;
                     }

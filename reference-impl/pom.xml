@@ -9,12 +9,12 @@
         <artifactId>a2a-java-sdk-parent</artifactId>
         <version>0.2.3.Beta2-SNAPSHOT</version>
     </parent>
-    <artifactId>a2a-java-sdk-server-quarkus</artifactId>
+    <artifactId>a2a-java-reference-server</artifactId>
 
     <packaging>jar</packaging>
 
-    <name>Java A2A SDK for Quarkus</name>
-    <description>Java SDK for the Agent2Agent Protocol (A2A) - SDK - Quarkus</description>
+    <name>Java A2A Reference Server</name>
+    <description>Java SDK for the Agent2Agent Protocol (A2A) - A2A Reference Server (based on Quarkus)</description>
 
     <dependencies>
         <dependency>

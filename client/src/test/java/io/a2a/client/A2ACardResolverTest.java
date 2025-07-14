@@ -1,6 +1,5 @@
 package io.a2a.client;
 
-import static io.a2a.client.A2ACardResolver.AGENT_CARD_TYPE_REFERENCE;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.a2a.util.Utils.unmarshalFrom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,6 +10,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.http.A2AHttpClient;
 import io.a2a.http.A2AHttpResponse;
 import io.a2a.spec.A2AClientError;
@@ -19,6 +19,10 @@ import io.a2a.spec.AgentCard;
 import org.junit.jupiter.api.Test;
 
 public class A2ACardResolverTest {
+
+    private static final String AGENT_CARD_PATH = "/.well-known/agent.json";
+    private static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
+
     @Test
     public void testConstructorStripsSlashes() throws Exception {
         TestHttpClient client = new TestHttpClient();
@@ -27,33 +31,37 @@ public class A2ACardResolverTest {
         A2ACardResolver resolver = new A2ACardResolver(client, "http://example.com/");
         AgentCard card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
 
         resolver = new A2ACardResolver(client, "http://example.com");
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com/", A2ACardResolver.DEFAULT_AGENT_CARD_PATH);
+        // baseUrl with trailing slash, agentCardParth with leading slash
+        resolver = new A2ACardResolver(client, "http://example.com/", AGENT_CARD_PATH);
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com", A2ACardResolver.DEFAULT_AGENT_CARD_PATH);
+        // baseUrl without trailing slash, agentCardPath with leading slash
+        resolver = new A2ACardResolver(client, "http://example.com", AGENT_CARD_PATH);
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com/", A2ACardResolver.DEFAULT_AGENT_CARD_PATH.substring(0));
+        // baseUrl with trailing slash, agentCardPath without leading slash
+        resolver = new A2ACardResolver(client, "http://example.com/", AGENT_CARD_PATH.substring(1));
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
 
-        resolver = new A2ACardResolver(client, "http://example.com", A2ACardResolver.DEFAULT_AGENT_CARD_PATH.substring(0));
+        // baseUrl without trailing slash, agentCardPath without leading slash
+        resolver = new A2ACardResolver(client, "http://example.com", AGENT_CARD_PATH.substring(1));
         card = resolver.getAgentCard();
 
-        assertEquals("http://example.com" + A2ACardResolver.DEFAULT_AGENT_CARD_PATH, client.url);
+        assertEquals("http://example.com" + AGENT_CARD_PATH, client.url);
     }
 
 
