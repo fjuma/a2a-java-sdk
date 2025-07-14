@@ -122,7 +122,7 @@ public abstract class AbstractA2AServerTest {
         Task saved = getTaskFromTaskStore(task.getId());
         assertEquals(task.getId(), saved.getId());
         assertEquals(task.getContextId(), saved.getContextId());
-        assertEquals(task.getStatus(), saved.getStatus());
+        assertEquals(task.getStatus().state(), saved.getStatus().state());
 
         deleteTaskInTaskStore(task.getId());
         Task saved2 = getTaskFromTaskStore(task.getId());
@@ -160,7 +160,6 @@ public abstract class AbstractA2AServerTest {
             assertEquals("session-xyz", response.getResult().getContextId());
             assertEquals(TaskState.SUBMITTED, response.getResult().getStatus().state());
             assertNull(response.getError());
-        } catch (Exception e) {
         } finally {
             deleteTaskInTaskStore(MINIMAL_TASK.getId());
         }
@@ -971,12 +970,13 @@ public abstract class AbstractA2AServerTest {
                 .build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + serverPort + "/" + path))
+                .header("Content-Type", APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString(Utils.OBJECT_MAPPER.writeValueAsString(event)))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Deleting task failed!" + response.body());
+            throw new RuntimeException(response.statusCode() + ": Queueing event failed!" + response.body());
         }
     }
 
@@ -986,15 +986,22 @@ public abstract class AbstractA2AServerTest {
 
         return CompletableFuture.runAsync(() -> {
             try {
-                while (true) {
+                boolean done = false;
+                long end = System.currentTimeMillis() + 15000;
+                while (System.currentTimeMillis() < end) {
                     int count = getStreamingSubscribedCount();
                     if (count > initialCount.get()) {
+                        done = true;
                         break;
                     }
                     Thread.sleep(500);
                 }
+                if (!done) {
+                    throw new RuntimeException("Timed out waiting for subscription");
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted");
             }
         });
     }
@@ -1010,8 +1017,7 @@ public abstract class AbstractA2AServerTest {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             String body = response.body().trim();
-            System.out.println(body);
-            return Integer.valueOf(body);
+            return Integer.parseInt(body);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

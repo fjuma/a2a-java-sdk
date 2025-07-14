@@ -85,14 +85,13 @@ public class A2ATestRoutes {
             testUtilsBean.deleteTask(taskId);
             rc.response()
                     .setStatusCode(200)
-                    .putHeader(CONTENT_TYPE, APPLICATION_JSON)
                     .end();
         } catch (Throwable t) {
             errorResponse(t, rc);
         }
     }
 
-    @Route(path = "test/queue/ensure/:taskId", methods = {Route.HttpMethod.POST})
+    @Route(path = "/test/queue/ensure/:taskId", methods = {Route.HttpMethod.POST})
     public void ensureTaskQueue(@Param String taskId, RoutingContext rc) {
         try {
             testUtilsBean.ensureQueue(taskId);
@@ -104,7 +103,7 @@ public class A2ATestRoutes {
         }
     }
 
-    @Route(path = "test/queue/enqueueTaskStatusUpdateEvent/:taskId", methods = {Route.HttpMethod.POST})
+    @Route(path = "/test/queue/enqueueTaskStatusUpdateEvent/:taskId", methods = {Route.HttpMethod.POST})
     public void enqueueTaskStatusUpdateEvent(@Param String taskId, @Body String body, RoutingContext rc) {
 
         try {
@@ -118,7 +117,7 @@ public class A2ATestRoutes {
         }
     }
 
-    @Route(path = "test/queue/enqueueTaskArtifactUpdateEvent/:taskId", methods = {Route.HttpMethod.POST})
+    @Route(path = "/test/queue/enqueueTaskArtifactUpdateEvent/:taskId", methods = {Route.HttpMethod.POST})
     public void enqueueTaskArtifactUpdateEvent(@Param String taskId, @Body String body, RoutingContext rc) {
 
         try {
@@ -132,7 +131,7 @@ public class A2ATestRoutes {
         }
     }
 
-    @Route(path = "test/streamingSubscribedCount", methods = {Route.HttpMethod.GET}, produces = {TEXT_PLAIN})
+    @Route(path = "/test/streamingSubscribedCount", methods = {Route.HttpMethod.GET}, produces = {TEXT_PLAIN})
     public void getStreamingSubscribedCount(RoutingContext rc) {
         rc.response()
                 .setStatusCode(200)
@@ -140,8 +139,9 @@ public class A2ATestRoutes {
     }
 
     private void errorResponse(Throwable t, RoutingContext rc) {
+        t.printStackTrace();
         rc.response()
-                .setStatusCode(200)
+                .setStatusCode(500)
                 .putHeader(CONTENT_TYPE, TEXT_PLAIN)
                 .end();
     }
