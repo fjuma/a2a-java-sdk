@@ -15,10 +15,9 @@ import io.quarkus.arc.profile.IfBuildProfile;
  * Contains utilities to interact with the server side for the tests.
  * The intent for this bean is to be exposed via REST.
  *
- * <p>There is a Jakarta implementation in {@code TestUtilsRESTEndpoint} which shows the contract for how to
- * expose it via REST. If not using Jakarta REST you will need to provide an implementation that works in a similar
- * way to {@code TestUtilsRESTEndpoint}.</p>
- *
+ * <p>There is a Quarkus implementation in {@code A2ATestRoutes} which shows the contract for how to
+ * expose it via REST. For other REST frameworks, you will need to provide an implementation that works in a similar
+ * way to {@code A2ATestRoutes}.</p>
  */
 @ApplicationScoped
 public class TestUtilsBean {
