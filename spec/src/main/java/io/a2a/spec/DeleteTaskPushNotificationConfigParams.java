@@ -19,6 +19,10 @@ public record DeleteTaskPushNotificationConfigParams(String id, String pushNotif
         Assert.checkNotNullParam("pushNotificationConfigId", pushNotificationConfigId);
     }
 
+    public DeleteTaskPushNotificationConfigParams(String id, String pushNotificationConfigId) {
+        this(id, pushNotificationConfigId, null);
+    }
+
     public static class Builder {
         String id;
         String pushNotificationConfigId;
