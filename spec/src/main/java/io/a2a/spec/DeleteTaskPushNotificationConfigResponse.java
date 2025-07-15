@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * A response for a delete task push notification config request.
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonSerialize(using = JSONRPCVoidResponseSerializer.class)
 public final class DeleteTaskPushNotificationConfigResponse extends JSONRPCResponse<Void> {
 
     @JsonCreator

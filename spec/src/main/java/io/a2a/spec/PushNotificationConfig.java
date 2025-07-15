@@ -21,6 +21,16 @@ public record PushNotificationConfig(String url, String token, PushNotificationA
         private PushNotificationAuthenticationInfo authentication;
         private String id;
 
+        public Builder() {
+        }
+
+        public Builder(PushNotificationConfig notificationConfig) {
+            this.url = notificationConfig.url;
+            this.token = notificationConfig.token;
+            this.authentication = notificationConfig.authentication;
+            this.id = notificationConfig.id;
+        }
+
         public Builder url(String url) {
             this.url = url;
             return this;

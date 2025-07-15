@@ -443,7 +443,7 @@ public class A2AClient {
             String httpResponseBody = sendPostRequest(listTaskPushNotificationRequest);
             return unmarshalResponse(httpResponseBody, LIST_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
-            throw new A2AServerException("Failed to list task push notification config: " + e);
+            throw new A2AServerException("Failed to list task push notification config: " + e, e.getCause());
         }
     }
 
@@ -654,7 +654,7 @@ public class A2AClient {
         T value = Utils.unmarshalFrom(response, typeReference);
         JSONRPCError error = value.getError();
         if (error != null) {
-            throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""));
+            throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""), error);
         }
         return value;
     }
