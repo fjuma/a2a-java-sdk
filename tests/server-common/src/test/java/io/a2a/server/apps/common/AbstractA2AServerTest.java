@@ -906,7 +906,7 @@ public abstract class AbstractA2AServerTest {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Saving task failed! " + response.body());
+throw new RuntimeException(String.format("Saving task failed! Status: %d, Body: %s", response.statusCode(), response.body()));
         }
     }
 
