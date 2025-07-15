@@ -924,7 +924,7 @@ throw new RuntimeException(String.format("Saving task failed! Status: %d, Body: 
             return null;
         }
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Getting task failed! " + response.body());
+throw new RuntimeException(String.format("Getting task failed! Status: %d, Body: %s", response.statusCode(), response.body()));
         }
         return Utils.OBJECT_MAPPER.readValue(response.body(), Task.TYPE_REFERENCE);
     }
