@@ -953,7 +953,7 @@ throw new RuntimeException(String.format("Getting task failed! Status: %d, Body:
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Ensuring queue failed!" + response.body());
+throw new RuntimeException(String.format("Ensuring queue failed! Status: %d, Body: %s", response.statusCode(), response.body()));
         }
     }
 
