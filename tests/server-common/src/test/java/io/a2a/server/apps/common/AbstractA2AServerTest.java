@@ -71,6 +71,7 @@ import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * This test requires doing some work on the server to add/get/delete tasks, and enqueue events. This is exposed via REST,
@@ -622,6 +623,7 @@ public abstract class AbstractA2AServerTest {
     }
 
     @Test
+    @Timeout(value = 3, unit = TimeUnit.MINUTES)
     public void testResubscribeExistingTaskSuccess() throws Exception {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         saveTaskInTaskStore(MINIMAL_TASK);
@@ -904,7 +906,7 @@ public abstract class AbstractA2AServerTest {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Creating task failed! " + response.body());
+            throw new RuntimeException(response.statusCode() + ": Saving task failed! " + response.body());
         }
     }
 
@@ -922,7 +924,7 @@ public abstract class AbstractA2AServerTest {
             return null;
         }
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Creating task failed! " + response.body());
+            throw new RuntimeException(response.statusCode() + ": Getting task failed! " + response.body());
         }
         return Utils.OBJECT_MAPPER.readValue(response.body(), Task.TYPE_REFERENCE);
     }
@@ -951,7 +953,7 @@ public abstract class AbstractA2AServerTest {
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Deleting task failed!" + response.body());
+            throw new RuntimeException(response.statusCode() + ": Ensuring queue failed!" + response.body());
         }
     }
 
