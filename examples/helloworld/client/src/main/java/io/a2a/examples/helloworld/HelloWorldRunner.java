@@ -1,6 +1,4 @@
-///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS io.github.a2asdk:a2a-java-sdk-client:0.2.3.Beta2-SNAPSHOT
-//SOURCES HelloWorldClient.java
+package io.a2a.examples.helloworld;
 
 /**
  * JBang script to run the A2A HelloWorldClient example.
