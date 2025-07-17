@@ -96,6 +96,20 @@ public class A2ACardResolverTest {
         assertFalse(success);
     }
 
+    /**
+     * Test method for testing agentCard's support for complex URL handling
+     */
+    @Test
+    public void testUrlResolve() throws Exception {
+        TestHttpClient client = new TestHttpClient();
+        client.body = JsonMessages.AGENT_CARD;
+        String baseUrl = "http://example.com/it_agent/";
+        A2ACardResolver resolver = new A2ACardResolver(client, baseUrl,AGENT_CARD_PATH);
+        AgentCard card = resolver.getAgentCard();
+        assertEquals("http://example.com/it_agent/.well-known/agent.json", client.url);
+
+    }
+
 
     @Test
     public void testGetAgentCardRequestError() throws Exception {
