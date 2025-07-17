@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import jakarta.enterprise.context.Dependent;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,9 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import io.a2a.spec.InternalError;
-import jakarta.enterprise.context.Dependent;
-
 import io.a2a.http.A2AHttpClient;
 import io.a2a.http.A2AHttpResponse;
 import io.a2a.server.agentexecution.AgentExecutor;
@@ -31,9 +29,11 @@ import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
 import io.a2a.server.events.InMemoryQueueManager;
-import io.a2a.server.tasks.InMemoryPushNotifier;
+import io.a2a.server.tasks.BasePushNotificationSender;
+import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
 import io.a2a.server.tasks.InMemoryTaskStore;
-import io.a2a.server.tasks.PushNotifier;
+import io.a2a.server.tasks.PushNotificationConfigStore;
+import io.a2a.server.tasks.PushNotificationSender;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.server.tasks.TaskUpdater;
@@ -42,7 +42,11 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.DeleteTaskPushNotificationConfigParams;
+import io.a2a.spec.DeleteTaskPushNotificationConfigRequest;
+import io.a2a.spec.DeleteTaskPushNotificationConfigResponse;
 import io.a2a.spec.Event;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -50,9 +54,13 @@ import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.ListTaskPushNotificationConfigParams;
+import io.a2a.spec.ListTaskPushNotificationConfigRequest;
+import io.a2a.spec.ListTaskPushNotificationConfigResponse;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
+import io.a2a.spec.PushNotificationNotSupportedError;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
@@ -75,6 +83,7 @@ import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
 import io.quarkus.arc.profile.IfBuildProfile;
 import mutiny.zero.ZeroPublisher;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -130,9 +139,10 @@ public class JSONRPCHandlerTest {
         taskStore = new InMemoryTaskStore();
         queueManager = new InMemoryQueueManager();
         httpClient = new TestHttpClient();
-        PushNotifier pushNotifier = new InMemoryPushNotifier(httpClient);
+        PushNotificationConfigStore pushConfigStore = new InMemoryPushNotificationConfigStore();
+        PushNotificationSender pushSender = new BasePushNotificationSender(pushConfigStore, httpClient);
 
-        requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier, internalExecutor);
+        requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushConfigStore, pushSender, internalExecutor);
     }
 
     @AfterEach
@@ -612,7 +622,7 @@ public class JSONRPCHandlerTest {
 
 
     @Test
-    public void testSetPushNotificationSuccess() {
+    public void testSetPushNotificationConfigSuccess() {
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
         taskStore.save(MINIMAL_TASK);
 
@@ -620,12 +630,12 @@ public class JSONRPCHandlerTest {
                 new TaskPushNotificationConfig(
                         MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
         SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
-        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotificationConfig(request);
         assertSame(taskPushConfig, response.getResult());
     }
 
     @Test
-    public void testGetPushNotificationSuccess() {
+    public void testGetPushNotificationConfigSuccess() {
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
         taskStore.save(MINIMAL_TASK);
         agentExecutorExecute = (context, eventQueue) -> {
@@ -638,13 +648,15 @@ public class JSONRPCHandlerTest {
                         MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
 
         SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
-        handler.setPushNotification(request);
+        handler.setPushNotificationConfig(request);
 
         GetTaskPushNotificationConfigRequest getRequest =
-                new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
-        GetTaskPushNotificationConfigResponse getResponse = handler.getPushNotification(getRequest);
+                new GetTaskPushNotificationConfigRequest("111", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
+        GetTaskPushNotificationConfigResponse getResponse = handler.getPushNotificationConfig(getRequest);
 
-        assertEquals(taskPushConfig, getResponse.getResult());
+        TaskPushNotificationConfig expectedConfig = new TaskPushNotificationConfig(MINIMAL_TASK.getId(),
+                new PushNotificationConfig.Builder().id(MINIMAL_TASK.getId()).url("http://example.com").build());
+        assertEquals(expectedConfig, getResponse.getResult());
     }
 
     @Test
@@ -681,7 +693,7 @@ public class JSONRPCHandlerTest {
                 MINIMAL_TASK.getId(),
                 new PushNotificationConfig.Builder().url("http://example.com").build());
         SetTaskPushNotificationConfigRequest stpnRequest = new SetTaskPushNotificationConfigRequest("1", config);
-        SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotification(stpnRequest);
+        SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotificationConfig(stpnRequest);
         assertNull(stpnResponse.getError());
 
         Message msg = new Message.Builder(MESSAGE)
@@ -1036,24 +1048,23 @@ public class JSONRPCHandlerTest {
         SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest.Builder()
                 .params(config)
                 .build();
-        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
-        assertInstanceOf(InvalidRequestError.class, response.getError());
-        assertEquals("Push notifications are not supported by the agent", response.getError().getMessage());
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotificationConfig(request);
+        assertInstanceOf(PushNotificationNotSupportedError.class, response.getError());
     }
 
     @Test
-    public void testOnGetPushNotificationNoPushNotifier() {
+    public void testOnGetPushNotificationNoPushNotifierConfig() {
         // Create request handler without a push notifier
         DefaultRequestHandler requestHandler =
-                new DefaultRequestHandler(executor, taskStore, queueManager, null, internalExecutor);
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, null, internalExecutor);
         AgentCard card = createAgentCard(false, true, false);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
         taskStore.save(MINIMAL_TASK);
 
         GetTaskPushNotificationConfigRequest request =
-                new GetTaskPushNotificationConfigRequest("id", new TaskIdParams(MINIMAL_TASK.getId()));
-        GetTaskPushNotificationConfigResponse response = handler.getPushNotification(request);
+                new GetTaskPushNotificationConfigRequest("id", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
+        GetTaskPushNotificationConfigResponse response = handler.getPushNotificationConfig(request);
 
         assertNotNull(response.getError());
         assertInstanceOf(UnsupportedOperationError.class, response.getError());
@@ -1061,10 +1072,10 @@ public class JSONRPCHandlerTest {
     }
 
     @Test
-    public void testOnSetPushNotificationNoPushNotifier() {
+    public void testOnSetPushNotificationNoPushNotifierConfig() {
         // Create request handler without a push notifier
         DefaultRequestHandler requestHandler =
-                new DefaultRequestHandler(executor, taskStore, queueManager, null, internalExecutor);
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, null, internalExecutor);
         AgentCard card = createAgentCard(false, true, false);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
@@ -1080,7 +1091,7 @@ public class JSONRPCHandlerTest {
         SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest.Builder()
                 .params(config)
                 .build();
-        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotificationConfig(request);
 
         assertInstanceOf(UnsupportedOperationError.class, response.getError());
         assertEquals("This operation is not supported", response.getError().getMessage());
@@ -1153,7 +1164,7 @@ public class JSONRPCHandlerTest {
     @Test
     public void testOnMessageSendErrorHandling() {
         DefaultRequestHandler requestHandler =
-                new DefaultRequestHandler(executor, taskStore, queueManager, null, internalExecutor);
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, null, internalExecutor);
         AgentCard card = createAgentCard(false, true, false);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
@@ -1241,6 +1252,175 @@ public class JSONRPCHandlerTest {
         assertInstanceOf(InternalError.class, results.get(0).getError());
     }
 
+    @Test
+    public void testListPushNotificationConfig() {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id(MINIMAL_TASK.getId())
+                        .build());
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        handler.setPushNotificationConfig(request);
+
+        ListTaskPushNotificationConfigRequest listRequest =
+                new ListTaskPushNotificationConfigRequest("111", new ListTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
+        ListTaskPushNotificationConfigResponse listResponse = handler.listPushNotificationConfig(listRequest);
+
+        assertEquals("111", listResponse.getId());
+        assertEquals(1, listResponse.getResult().size());
+        assertEquals(taskPushConfig, listResponse.getResult().get(0));
+    }
+
+    @Test
+    public void testListPushNotificationConfigNotSupported() {
+        AgentCard card = createAgentCard(true, false, true);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id(MINIMAL_TASK.getId())
+                        .build());
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        handler.setPushNotificationConfig(request);
+
+        ListTaskPushNotificationConfigRequest listRequest =
+                new ListTaskPushNotificationConfigRequest("111", new ListTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
+        ListTaskPushNotificationConfigResponse listResponse = handler.listPushNotificationConfig(listRequest);
+
+        assertEquals("111", listResponse.getId());
+        assertNull(listResponse.getResult());
+        assertInstanceOf(PushNotificationNotSupportedError.class, listResponse.getError());
+    }
+
+    @Test
+    public void testListPushNotificationConfigNoPushConfigStore() {
+        DefaultRequestHandler requestHandler =
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, null, internalExecutor);
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        ListTaskPushNotificationConfigRequest listRequest =
+                new ListTaskPushNotificationConfigRequest("111", new ListTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
+        ListTaskPushNotificationConfigResponse listResponse = handler.listPushNotificationConfig(listRequest);
+
+        assertEquals("111", listResponse.getId());
+        assertNull(listResponse.getResult());
+        assertInstanceOf(UnsupportedOperationError.class, listResponse.getError());
+    }
+
+    @Test
+    public void testListPushNotificationConfigTaskNotFound() {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        ListTaskPushNotificationConfigRequest listRequest =
+                new ListTaskPushNotificationConfigRequest("111", new ListTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
+        ListTaskPushNotificationConfigResponse listResponse = handler.listPushNotificationConfig(listRequest);
+
+        assertEquals("111", listResponse.getId());
+        assertNull(listResponse.getResult());
+        assertInstanceOf(TaskNotFoundError.class, listResponse.getError());
+    }
+
+    @Test
+    public void testDeletePushNotificationConfig() {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id(MINIMAL_TASK.getId())
+                        .build());
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        handler.setPushNotificationConfig(request);
+
+        DeleteTaskPushNotificationConfigRequest deleteRequest =
+                new DeleteTaskPushNotificationConfigRequest("111", new DeleteTaskPushNotificationConfigParams(MINIMAL_TASK.getId(), MINIMAL_TASK.getId()));
+        DeleteTaskPushNotificationConfigResponse deleteResponse = handler.deletePushNotificationConfig(deleteRequest);
+
+        assertEquals("111", deleteResponse.getId());
+        assertNull(deleteResponse.getError());
+        assertNull(deleteResponse.getResult());
+    }
+
+    @Test
+    public void testDeletePushNotificationConfigNotSupported() {
+        AgentCard card = createAgentCard(true, false, true);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id(MINIMAL_TASK.getId())
+                        .build());
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        handler.setPushNotificationConfig(request);
+
+        DeleteTaskPushNotificationConfigRequest deleteRequest =
+                new DeleteTaskPushNotificationConfigRequest("111", new DeleteTaskPushNotificationConfigParams(MINIMAL_TASK.getId(), MINIMAL_TASK.getId()));
+        DeleteTaskPushNotificationConfigResponse deleteResponse = handler.deletePushNotificationConfig(deleteRequest);
+
+        assertEquals("111", deleteResponse.getId());
+        assertNull(deleteResponse.getResult());
+        assertInstanceOf(PushNotificationNotSupportedError.class, deleteResponse.getError());
+    }
+
+    @Test
+    public void testDeletePushNotificationConfigNoPushConfigStore() {
+        DefaultRequestHandler requestHandler =
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, null, internalExecutor);
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id(MINIMAL_TASK.getId())
+                        .build());
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        handler.setPushNotificationConfig(request);
+
+        DeleteTaskPushNotificationConfigRequest deleteRequest =
+                new DeleteTaskPushNotificationConfigRequest("111", new DeleteTaskPushNotificationConfigParams(MINIMAL_TASK.getId(), MINIMAL_TASK.getId()));
+        DeleteTaskPushNotificationConfigResponse deleteResponse = handler.deletePushNotificationConfig(deleteRequest);
+
+        assertEquals("111", deleteResponse.getId());
+        assertNull(deleteResponse.getResult());
+        assertInstanceOf(UnsupportedOperationError.class, deleteResponse.getError());
+    }
+
     private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
         return new AgentCard.Builder()
                 .name("test-card")
@@ -1256,6 +1436,7 @@ public class JSONRPCHandlerTest {
                 .defaultInputModes(new ArrayList<>())
                 .defaultOutputModes(new ArrayList<>())
                 .skills(new ArrayList<>())
+                .protocolVersion("0.2.5")
                 .build();
     }
 

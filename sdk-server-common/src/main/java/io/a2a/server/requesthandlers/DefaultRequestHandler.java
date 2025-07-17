@@ -16,20 +16,27 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import io.a2a.server.agentexecution.AgentExecutor;
+import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.agentexecution.SimpleRequestContextBuilder;
 import io.a2a.server.events.EnhancedRunnable;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
 import io.a2a.server.events.QueueManager;
 import io.a2a.server.events.TaskQueueExistsException;
-import io.a2a.server.tasks.PushNotifier;
+import io.a2a.server.tasks.PushNotificationConfigStore;
+import io.a2a.server.tasks.PushNotificationSender;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.server.util.async.Internal;
+import io.a2a.spec.DeleteTaskPushNotificationConfigParams;
 import io.a2a.spec.Event;
 import io.a2a.spec.EventKind;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.ListTaskPushNotificationConfigParams;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
@@ -43,9 +50,6 @@ import io.a2a.spec.UnsupportedOperationError;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.a2a.server.agentexecution.AgentExecutor;
-import io.a2a.server.agentexecution.RequestContext;
-import io.a2a.server.agentexecution.SimpleRequestContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +61,8 @@ public class DefaultRequestHandler implements RequestHandler {
     private final AgentExecutor agentExecutor;
     private final TaskStore taskStore;
     private final QueueManager queueManager;
-    private final PushNotifier pushNotifier;
+    private final PushNotificationConfigStore pushConfigStore;
+    private final PushNotificationSender pushSender;
     private final Supplier<RequestContext.Builder> requestContextBuilder;
 
     private final ConcurrentMap<String, CompletableFuture<Void>> runningAgents = new ConcurrentHashMap<>();
@@ -66,11 +71,13 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Inject
     public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore,
-                                 QueueManager queueManager, PushNotifier pushNotifier, @Internal Executor executor) {
+                                 QueueManager queueManager, PushNotificationConfigStore pushConfigStore,
+                                 PushNotificationSender pushSender, @Internal Executor executor) {
         this.agentExecutor = agentExecutor;
         this.taskStore = taskStore;
         this.queueManager = queueManager;
-        this.pushNotifier = pushNotifier;
+        this.pushConfigStore = pushConfigStore;
+        this.pushSender = pushSender;
         this.executor = executor;
         // TODO In Python this is also a constructor parameter defaulting to this SimpleRequestContextBuilder
         //  implementation if the parameter is null. Skip that for now, since otherwise I get CDI errors, and
@@ -226,20 +233,20 @@ public class DefaultRequestHandler implements RequestHandler {
                     } catch (TaskQueueExistsException e) {
                         // TODO Log
                     }
-                    if (pushNotifier != null &&
+                    if (pushConfigStore != null &&
                             params.configuration() != null &&
                             params.configuration().pushNotification() != null) {
 
-                        pushNotifier.setInfo(
+                        pushConfigStore.setInfo(
                                 createdTask.getId(),
                                 params.configuration().pushNotification());
                     }
 
                 }
-                if (pushNotifier != null && taskId.get() != null) {
+                if (pushSender != null && taskId.get() != null) {
                     EventKind latest = resultAggregator.getCurrentResult();
                     if (latest instanceof Task latestTask) {
-                        pushNotifier.sendNotification(latestTask);
+                        pushSender.sendNotification(latestTask);
                     }
                 }
 
@@ -254,7 +261,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCError {
-        if (pushNotifier == null) {
+        if (pushConfigStore == null) {
             throw new UnsupportedOperationError();
         }
         Task task = taskStore.get(params.taskId());
@@ -262,14 +269,14 @@ public class DefaultRequestHandler implements RequestHandler {
             throw new TaskNotFoundError();
         }
 
-        pushNotifier.setInfo(params.taskId(), params.pushNotificationConfig());
+        pushConfigStore.setInfo(params.taskId(), params.pushNotificationConfig());
 
         return params;
     }
 
     @Override
-    public TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError {
-        if (pushNotifier == null) {
+    public TaskPushNotificationConfig onGetTaskPushNotificationConfig(GetTaskPushNotificationConfigParams params) throws JSONRPCError {
+        if (pushConfigStore == null) {
             throw new UnsupportedOperationError();
         }
         Task task = taskStore.get(params.id());
@@ -277,12 +284,24 @@ public class DefaultRequestHandler implements RequestHandler {
             throw new TaskNotFoundError();
         }
 
-        PushNotificationConfig pushNotificationConfig = pushNotifier.getInfo(params.id());
-        if (pushNotificationConfig == null) {
+        List<PushNotificationConfig> pushNotificationConfigList = pushConfigStore.getInfo(params.id());
+        if (pushNotificationConfigList == null || pushNotificationConfigList.isEmpty()) {
             throw new InternalError("No push notification config found");
         }
 
-        return new TaskPushNotificationConfig(params.id(), pushNotificationConfig);
+        return new TaskPushNotificationConfig(params.id(), getPushNotificationConfig(pushNotificationConfigList, params.pushNotificationConfigId()));
+    }
+
+    private PushNotificationConfig getPushNotificationConfig(List<PushNotificationConfig> notificationConfigList,
+                                                             String configId) {
+        if (configId != null) {
+            for (PushNotificationConfig notificationConfig : notificationConfigList) {
+                if (configId.equals(notificationConfig.id())) {
+                    return notificationConfig;
+                }
+            }
+        }
+        return notificationConfigList.get(0);
     }
 
     @Override
@@ -305,8 +324,44 @@ public class DefaultRequestHandler implements RequestHandler {
         return convertingProcessor(results, e -> (StreamingEventKind) e);
     }
 
+    @Override
+    public List<TaskPushNotificationConfig> onListTaskPushNotificationConfig(ListTaskPushNotificationConfigParams params) throws JSONRPCError {
+        if (pushConfigStore == null) {
+            throw new UnsupportedOperationError();
+        }
+
+        Task task = taskStore.get(params.id());
+        if (task == null) {
+            throw new TaskNotFoundError();
+        }
+
+        List<PushNotificationConfig> pushNotificationConfigList = pushConfigStore.getInfo(params.id());
+        List<TaskPushNotificationConfig> taskPushNotificationConfigList = new ArrayList<>();
+        if (pushNotificationConfigList != null) {
+            for (PushNotificationConfig pushNotificationConfig : pushNotificationConfigList) {
+                TaskPushNotificationConfig taskPushNotificationConfig = new TaskPushNotificationConfig(params.id(), pushNotificationConfig);
+                taskPushNotificationConfigList.add(taskPushNotificationConfig);
+            }
+        }
+        return taskPushNotificationConfigList;
+    }
+
+    @Override
+    public void onDeleteTaskPushNotificationConfig(DeleteTaskPushNotificationConfigParams params) {
+        if (pushConfigStore == null) {
+            throw new UnsupportedOperationError();
+        }
+
+        Task task = taskStore.get(params.id());
+        if (task == null) {
+            throw new TaskNotFoundError();
+        }
+
+        pushConfigStore.deleteInfo(params.id(), params.pushNotificationConfigId());
+    }
+
     private boolean shouldAddPushInfo(MessageSendParams params) {
-        return pushNotifier != null && params.configuration() != null && params.configuration().pushNotification() != null;
+        return pushConfigStore != null && params.configuration() != null && params.configuration().pushNotification() != null;
     }
 
     private EnhancedRunnable registerAndExecuteAgentAsync(String taskId, RequestContext requestContext, EventQueue queue) {
@@ -357,7 +412,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
             if (shouldAddPushInfo(params)) {
                 LOGGER.debug("Adding push info");
-                pushNotifier.setInfo(task.getId(), params.configuration().pushNotification());
+                pushConfigStore.setInfo(task.getId(), params.configuration().pushNotification());
             }
         }
 

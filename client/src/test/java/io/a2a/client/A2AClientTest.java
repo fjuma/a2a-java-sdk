@@ -46,6 +46,7 @@ import io.a2a.spec.FileContent;
 import io.a2a.spec.FilePart;
 import io.a2a.spec.FileWithBytes;
 import io.a2a.spec.FileWithUri;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.Message;
@@ -328,7 +329,7 @@ public class A2AClientTest {
 
         A2AClient client = new A2AClient("http://localhost:4001");
         GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("1",
-                new TaskIdParams("de38c76d-d54c-436c-8b9f-4c2703648d64", new HashMap<>()));
+                new GetTaskPushNotificationConfigParams("de38c76d-d54c-436c-8b9f-4c2703648d64", null, new HashMap<>()));
         assertEquals("2.0", response.getJsonrpc());
         assertEquals(1, response.getId());
         assertInstanceOf(TaskPushNotificationConfig.class, response.getResult());
@@ -442,6 +443,7 @@ public class A2AClientTest {
         assertEquals(outputModes, skills.get(1).outputModes());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
         assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
+        assertEquals("0.2.5", agentCard.protocolVersion());
     }
 
     @Test
@@ -514,6 +516,7 @@ public class A2AClientTest {
         assertEquals(List.of("extended"), skills.get(2).tags());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
         assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
+        assertEquals("0.2.5", agentCard.protocolVersion());
     }
 
     @Test

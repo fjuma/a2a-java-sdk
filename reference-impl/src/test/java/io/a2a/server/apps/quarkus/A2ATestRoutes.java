@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import io.a2a.server.apps.common.TestUtilsBean;
+import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskStatusUpdateEvent;
@@ -136,6 +137,44 @@ public class A2ATestRoutes {
         rc.response()
                 .setStatusCode(200)
                 .end(String.valueOf(streamingSubscribedCount.get()));
+    }
+
+    @Route(path = "/test/task/:taskId/config/:configId", methods = {Route.HttpMethod.DELETE}, type = Route.HandlerType.BLOCKING)
+    public void deleteTaskPushNotificationConfig(@Param String taskId, @Param String configId, RoutingContext rc) {
+        try {
+            Task task = testUtilsBean.getTask(taskId);
+            if (task == null) {
+                rc.response()
+                        .setStatusCode(404)
+                        .end();
+                return;
+            }
+            testUtilsBean.deleteTaskPushNotificationConfig(taskId, configId);
+            rc.response()
+                    .setStatusCode(200)
+                    .end();
+        } catch (Throwable t) {
+            errorResponse(t, rc);
+        }
+    }
+
+    @Route(path = "/test/task/:taskId", methods = {Route.HttpMethod.POST}, type = Route.HandlerType.BLOCKING)
+    public void saveTaskPushNotificationConfig(@Param String taskId, @Body String body, RoutingContext rc) {
+        try {
+            PushNotificationConfig notificationConfig = Utils.OBJECT_MAPPER.readValue(body, PushNotificationConfig.class);
+            if (notificationConfig == null) {
+                rc.response()
+                        .setStatusCode(404)
+                        .end();
+                return;
+            }
+            testUtilsBean.saveTaskPushNotificationConfig(taskId, notificationConfig);
+            rc.response()
+                    .setStatusCode(200)
+                    .end();
+        } catch (Throwable t) {
+            errorResponse(t, rc);
+        }
     }
 
     private void errorResponse(Throwable t, RoutingContext rc) {

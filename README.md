@@ -89,6 +89,7 @@ public class WeatherAgentCardProducer {
                         .tags(Collections.singletonList("weather"))
                         .examples(List.of("weather in LA, CA"))
                         .build()))
+                .protocolVersion("0.2.5")
                 .build();
     }
 }
@@ -255,18 +256,21 @@ Map<String, Object> metadata = ...
 CancelTaskResponse response = client.cancelTask(new TaskIdParams("task-1234", metadata));
 ```
 
-#### Get the push notification configuration for a task
+#### Get a push notification configuration for a task
 
 ```java
 // Get task push notification configuration
 GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("task-1234");
 
-// You can also specify additional properties using a map
+// The push notification configuration ID can also be optionally specified
+GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("task-1234", "config-4567");
+
+// Additional properties can be specified using a map
 Map<String, Object> metadata = ...
-GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig(new TaskIdParams("task-1234", metadata));
+GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig(new GetTaskPushNotificationConfigParams("task-1234", "config-1234", metadata));
 ```
 
-#### Set the push notification configuration for a task
+#### Set a push notification configuration for a task
 
 ```java
 // Set task push notification configuration
@@ -275,6 +279,26 @@ PushNotificationConfig pushNotificationConfig = new PushNotificationConfig.Build
         .authenticationInfo(new AuthenticationInfo(Collections.singletonList("jwt"), null))
         .build();
 SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("task-1234", pushNotificationConfig);
+```
+
+#### List the push notification configurations for a task
+
+```java
+ListTaskPushNotificationConfigResponse response = client.listTaskPushNotificationConfig("task-1234");
+
+// Additional properties can be specified using a map
+Map<String, Object> metadata = ...
+ListTaskPushNotificationConfigResponse response = client.listTaskPushNotificationConfig(new ListTaskPushNotificationConfigParams("task-123", metadata));
+```
+
+#### Delete a push notification configuration for a task
+
+```java
+DeleteTaskPushNotificationConfigResponse response = client.deleteTaskPushNotificationConfig("task-1234", "config-4567");
+
+// Additional properties can be specified using a map
+Map<String, Object> metadata = ...
+DeleteTaskPushNotificationConfigResponse response = client.deleteTaskPushNotificationConfig(new DeleteTaskPushNotificationConfigParams("task-1234", "config-4567", metadata));
 ```
 
 #### Send a streaming message

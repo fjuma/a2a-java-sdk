@@ -1,31 +1,12 @@
 package io.a2a.spec;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.io.IOException;
-
-/**
- * Custom Jackson deserializer for non-streaming JSON-RPC requests in the A2A protocol.
- * This deserializer handles the polymorphic deserialization of different non-streaming
- * request types based on the "method" field in the JSON-RPC request.
- *
- * <p>The deserializer supports the following non-streaming request methods:</p>
- * <ul>
- *   <li>{@code tasks/get} - deserializes to {@link GetTaskRequest}</li>
- *   <li>{@code tasks/cancel} - deserializes to {@link CancelTaskRequest}</li>
- *   <li>{@code tasks/pushNotificationConfig/set} - deserializes to {@link SetTaskPushNotificationConfigRequest}</li>
- *   <li>{@code tasks/pushNotificationConfig/get} - deserializes to {@link GetTaskPushNotificationConfigRequest}</li>
- *   <li>{@code message/send} - deserializes to {@link SendMessageRequest}</li>
- * </ul>
- *
- * <p>This deserializer extends {@link JSONRPCRequestDeserializerBase} to inherit common
- * JSON-RPC validation and parsing functionality. If an unrecognized method is encountered,
- * it throws a {@link MethodNotFoundJsonMappingException} with the request ID for proper
- * error response generation.</p>
- */
 public class NonStreamingJSONRPCRequestDeserializer extends JSONRPCRequestDeserializerBase<NonStreamingJSONRPCRequest<?>> {
 
     /**
@@ -77,10 +58,16 @@ public class NonStreamingJSONRPCRequestDeserializer extends JSONRPCRequestDeseri
                         getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
             case GetTaskPushNotificationConfigRequest.METHOD:
                 return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method,
-                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, GetTaskPushNotificationConfigParams.class));
             case SendMessageRequest.METHOD:
                 return new SendMessageRequest(jsonrpc, id, method,
                         getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
+            case ListTaskPushNotificationConfigRequest.METHOD:
+                return new ListTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, ListTaskPushNotificationConfigParams.class));
+            case DeleteTaskPushNotificationConfigRequest.METHOD:
+                return new DeleteTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, DeleteTaskPushNotificationConfigParams.class));
             default:
                 throw new MethodNotFoundJsonMappingException("Invalid method", getIdIfPossible(treeNode, jsonParser));
         }

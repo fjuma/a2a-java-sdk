@@ -2,6 +2,7 @@ package io.a2a.spec;
 
 import static io.a2a.util.Utils.defaultIfNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -22,7 +23,7 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permits SendStreamingMessageResponse,
         GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationConfigResponse, GetTaskPushNotificationConfigResponse,
-        SendMessageResponse, JSONRPCErrorResponse {
+        SendMessageResponse, DeleteTaskPushNotificationConfigResponse, ListTaskPushNotificationConfigResponse, JSONRPCErrorResponse {
 
     /** The JSON-RPC protocol version, must be "2.0" */
     protected String jsonrpc;
@@ -42,23 +43,14 @@ public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permit
     public JSONRPCResponse() {
     }
 
-    /**
-     * Constructs a JSON-RPC response with the specified parameters.
-     * 
-     * @param jsonrpc the JSON-RPC protocol version (must be "2.0" or null for default)
-     * @param id the request identifier (string, number, or null)
-     * @param result the result object for successful responses (null for error responses)
-     * @param error the error object for failed responses (null for successful responses)
-     * @throws IllegalArgumentException if the protocol version is invalid, or if both result and error are provided, or if neither is provided
-     */
-    public JSONRPCResponse(String jsonrpc, Object id, T result, JSONRPCError error) {
+    public JSONRPCResponse(String jsonrpc, Object id, T result, JSONRPCError error, Class<T> resultType) {
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
         if (error != null && result != null) {
             throw new IllegalArgumentException("Invalid JSON-RPC error response");
         }
-        if (error == null && result == null) {
+        if (error == null && result == null && ! Void.class.equals(resultType)) {
             throw new IllegalArgumentException("Invalid JSON-RPC success response");
         }
         Assert.isNullOrStringOrInteger(id);

@@ -2,14 +2,13 @@ package io.a2a.server.apps.common;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.Response;
 
 import io.a2a.server.events.QueueManager;
+import io.a2a.server.tasks.PushNotificationConfigStore;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.Event;
+import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.Task;
-import io.quarkus.arc.profile.IfBuildProfile;
 
 /**
  * Contains utilities to interact with the server side for the tests.
@@ -27,6 +26,9 @@ public class TestUtilsBean {
 
     @Inject
     QueueManager queueManager;
+
+    @Inject
+    PushNotificationConfigStore pushNotificationConfigStore;
 
     public void saveTask(Task task) {
         taskStore.save(task);
@@ -46,5 +48,13 @@ public class TestUtilsBean {
 
     public void enqueueEvent(String taskId, Event event) {
         queueManager.get(taskId).enqueueEvent(event);
+    }
+
+    public void deleteTaskPushNotificationConfig(String taskId, String configId) {
+        pushNotificationConfigStore.deleteInfo(taskId, configId);
+    }
+
+    public void saveTaskPushNotificationConfig(String taskId, PushNotificationConfig notificationConfig) {
+        pushNotificationConfigStore.setInfo(taskId, notificationConfig);
     }
 }

@@ -30,13 +30,10 @@ public class PushNotificationNotSupportedError extends JSONRPCError {
     /** The default error code for push notification not supported errors */
     public final static Integer DEFAULT_CODE = -32003;
 
-    /**
-     * Creates a new PushNotificationNotSupportedError with the specified parameters.
-     * 
-     * @param code the error code (defaults to -32003 if null)
-     * @param message the error message (defaults to "Push Notification is not supported" if null)
-     * @param data additional error data (can be null)
-     */
+    public PushNotificationNotSupportedError() {
+        this(null, null, null);
+    }
+
     @JsonCreator
     public PushNotificationNotSupportedError(
             @JsonProperty("code") Integer code,

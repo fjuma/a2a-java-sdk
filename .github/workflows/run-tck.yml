@@ -11,7 +11,7 @@ on:
 
 env:
   # Tag of the TCK
-  TCK_VERSION: v0.2.3
+  TCK_VERSION: v0.2.5
   # Tells uv to not need a venv, and instead use system
   UV_SYSTEM_PYTHON: 1
 

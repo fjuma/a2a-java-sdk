@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.wildfly.common.Assert.assertNotNull;
 import static org.wildfly.common.Assert.assertTrue;
 
@@ -28,11 +29,16 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import io.a2a.client.A2AClient;
+import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.DeleteTaskPushNotificationConfigResponse;
 import io.a2a.spec.Event;
+import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -42,6 +48,7 @@ import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONParseError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
+import io.a2a.spec.ListTaskPushNotificationConfigResponse;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.MethodNotFoundError;
@@ -69,8 +76,10 @@ import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * This test requires doing some work on the server to add/get/delete tasks, and enqueue events. This is exposed via REST,
@@ -110,9 +119,11 @@ public abstract class AbstractA2AServerTest {
     public static final String APPLICATION_JSON = "application/json";
 
     private final int serverPort;
+    private A2AClient client;
 
     protected AbstractA2AServerTest(int serverPort) {
         this.serverPort = serverPort;
+        this.client = new A2AClient("http://localhost:" + serverPort);
     }
 
     @Test
@@ -337,6 +348,7 @@ public abstract class AbstractA2AServerTest {
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), MINIMAL_TASK.getId());
             deleteTaskInTaskStore(MINIMAL_TASK.getId());
         }
     }
@@ -362,7 +374,7 @@ public abstract class AbstractA2AServerTest {
             assertNotNull(setTaskPushNotificationResponse);
 
             GetTaskPushNotificationConfigRequest request =
-                    new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+                    new GetTaskPushNotificationConfigRequest("111", new GetTaskPushNotificationConfigParams(MINIMAL_TASK.getId()));
             GetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -379,6 +391,7 @@ public abstract class AbstractA2AServerTest {
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), MINIMAL_TASK.getId());
             deleteTaskInTaskStore(MINIMAL_TASK.getId());
         }
     }
@@ -622,6 +635,7 @@ public abstract class AbstractA2AServerTest {
     }
 
     @Test
+    @Timeout(value = 3, unit = TimeUnit.MINUTES)
     public void testResubscribeExistingTaskSuccess() throws Exception {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         saveTaskInTaskStore(MINIMAL_TASK);
@@ -840,6 +854,220 @@ public abstract class AbstractA2AServerTest {
 
     }
 
+    @Test
+    public void testListPushNotificationConfigWithConfigId() throws Exception {
+        saveTaskInTaskStore(MINIMAL_TASK);
+        PushNotificationConfig notificationConfig1 =
+                new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id("config1")
+                        .build();
+        PushNotificationConfig notificationConfig2 =
+                new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id("config2")
+                        .build();
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig1);
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig2);
+
+        try {
+            ListTaskPushNotificationConfigResponse listResponse = client.listTaskPushNotificationConfig("111", MINIMAL_TASK.getId());
+            assertEquals("111", listResponse.getId());
+            assertEquals(2, listResponse.getResult().size());
+            assertEquals(new TaskPushNotificationConfig(MINIMAL_TASK.getId(), notificationConfig1), listResponse.getResult().get(0));
+            assertEquals(new TaskPushNotificationConfig(MINIMAL_TASK.getId(), notificationConfig2), listResponse.getResult().get(1));
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), "config1");
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), "config2");
+            deleteTaskInTaskStore(MINIMAL_TASK.getId());
+        }
+    }
+
+    @Test
+    public void testListPushNotificationConfigWithoutConfigId() throws Exception {
+        saveTaskInTaskStore(MINIMAL_TASK);
+        PushNotificationConfig notificationConfig1 =
+                new PushNotificationConfig.Builder()
+                        .url("http://1.example.com")
+                        .build();
+        PushNotificationConfig notificationConfig2 =
+                new PushNotificationConfig.Builder()
+                        .url("http://2.example.com")
+                        .build();
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig1);
+
+        // will overwrite the previous one
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig2);
+        try {
+            ListTaskPushNotificationConfigResponse listResponse = client.listTaskPushNotificationConfig("111", MINIMAL_TASK.getId());
+            assertEquals("111", listResponse.getId());
+            assertEquals(1, listResponse.getResult().size());
+
+            PushNotificationConfig expectedNotificationConfig = new PushNotificationConfig.Builder()
+                    .url("http://2.example.com")
+                    .id(MINIMAL_TASK.getId())
+                    .build();
+            assertEquals(new TaskPushNotificationConfig(MINIMAL_TASK.getId(), expectedNotificationConfig),
+                    listResponse.getResult().get(0));
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), MINIMAL_TASK.getId());
+            deleteTaskInTaskStore(MINIMAL_TASK.getId());
+        }
+    }
+
+    @Test
+    public void testListPushNotificationConfigTaskNotFound() {
+        try {
+            client.listTaskPushNotificationConfig("111", "non-existent-task");
+            fail();
+        } catch (A2AServerException e) {
+            assertInstanceOf(TaskNotFoundError.class, e.getCause());
+        }
+    }
+
+    @Test
+    public void testListPushNotificationConfigEmptyList() throws Exception {
+        saveTaskInTaskStore(MINIMAL_TASK);
+        try {
+            ListTaskPushNotificationConfigResponse listResponse = client.listTaskPushNotificationConfig("111", MINIMAL_TASK.getId());
+            assertEquals("111", listResponse.getId());
+            assertEquals(0, listResponse.getResult().size());
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deleteTaskInTaskStore(MINIMAL_TASK.getId());
+        }
+    }
+
+    @Test
+    public void testDeletePushNotificationConfigWithValidConfigId() throws Exception {
+        saveTaskInTaskStore(MINIMAL_TASK);
+        saveTaskInTaskStore(new Task.Builder()
+                .id("task-456")
+                .contextId("session-xyz")
+                .status(new TaskStatus(TaskState.SUBMITTED))
+                .build());
+
+        PushNotificationConfig notificationConfig1 =
+                new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id("config1")
+                        .build();
+        PushNotificationConfig notificationConfig2 =
+                new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id("config2")
+                        .build();
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig1);
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig2);
+        savePushNotificationConfigInStore("task-456", notificationConfig1);
+
+        try {
+            // specify the config ID to delete
+            DeleteTaskPushNotificationConfigResponse deleteResponse = client.deleteTaskPushNotificationConfig(MINIMAL_TASK.getId(),
+                    "config1");
+            assertNull(deleteResponse.getError());
+            assertNull(deleteResponse.getResult());
+
+            // should now be 1 left
+            ListTaskPushNotificationConfigResponse listResponse = client.listTaskPushNotificationConfig(MINIMAL_TASK.getId());
+            assertEquals(1, listResponse.getResult().size());
+
+            // should remain unchanged, this is a different task
+            listResponse = client.listTaskPushNotificationConfig("task-456");
+            assertEquals(1, listResponse.getResult().size());
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), "config1");
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), "config2");
+            deletePushNotificationConfigInStore("task-456", "config1");
+            deleteTaskInTaskStore(MINIMAL_TASK.getId());
+            deleteTaskInTaskStore("task-456");
+        }
+    }
+
+    @Test
+    public void testDeletePushNotificationConfigWithNonExistingConfigId() throws Exception {
+        saveTaskInTaskStore(MINIMAL_TASK);
+        PushNotificationConfig notificationConfig1 =
+                new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id("config1")
+                        .build();
+        PushNotificationConfig notificationConfig2 =
+                new PushNotificationConfig.Builder()
+                        .url("http://example.com")
+                        .id("config2")
+                        .build();
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig1);
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig2);
+
+        try {
+            DeleteTaskPushNotificationConfigResponse deleteResponse = client.deleteTaskPushNotificationConfig(MINIMAL_TASK.getId(),
+                    "non-existent-config-id");
+            assertNull(deleteResponse.getError());
+            assertNull(deleteResponse.getResult());
+
+            // should remain unchanged
+            ListTaskPushNotificationConfigResponse listResponse = client.listTaskPushNotificationConfig(MINIMAL_TASK.getId());
+            assertEquals(2, listResponse.getResult().size());
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), "config1");
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), "config2");
+            deleteTaskInTaskStore(MINIMAL_TASK.getId());
+        }
+    }
+
+    @Test
+    public void testDeletePushNotificationConfigTaskNotFound() {
+        try {
+            client.deleteTaskPushNotificationConfig("non-existent-task", "non-existent-config-id");
+            fail();
+        } catch (A2AServerException e) {
+            assertInstanceOf(TaskNotFoundError.class, e.getCause());
+        }
+    }
+
+    @Test
+    public void testDeletePushNotificationConfigSetWithoutConfigId() throws Exception {
+        saveTaskInTaskStore(MINIMAL_TASK);
+        PushNotificationConfig notificationConfig1 =
+                new PushNotificationConfig.Builder()
+                        .url("http://1.example.com")
+                        .build();
+        PushNotificationConfig notificationConfig2 =
+                new PushNotificationConfig.Builder()
+                        .url("http://2.example.com")
+                        .build();
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig1);
+
+        // this one will overwrite the previous one
+        savePushNotificationConfigInStore(MINIMAL_TASK.getId(), notificationConfig2);
+
+        try {
+            DeleteTaskPushNotificationConfigResponse deleteResponse = client.deleteTaskPushNotificationConfig(MINIMAL_TASK.getId(),
+                    MINIMAL_TASK.getId());
+            assertNull(deleteResponse.getError());
+            assertNull(deleteResponse.getResult());
+
+            // should now be 0
+            ListTaskPushNotificationConfigResponse listResponse = client.listTaskPushNotificationConfig(MINIMAL_TASK.getId());
+            assertEquals(0, listResponse.getResult().size());
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deletePushNotificationConfigInStore(MINIMAL_TASK.getId(), MINIMAL_TASK.getId());
+            deleteTaskInTaskStore(MINIMAL_TASK.getId());
+        }
+    }
+
     private SendStreamingMessageResponse extractJsonResponseFromSseLine(String line) throws JsonProcessingException {
         line = extractSseData(line);
         if (line != null) {
@@ -904,7 +1132,7 @@ public abstract class AbstractA2AServerTest {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Creating task failed! " + response.body());
+throw new RuntimeException(String.format("Saving task failed! Status: %d, Body: %s", response.statusCode(), response.body()));
         }
     }
 
@@ -922,7 +1150,7 @@ public abstract class AbstractA2AServerTest {
             return null;
         }
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Creating task failed! " + response.body());
+throw new RuntimeException(String.format("Getting task failed! Status: %d, Body: %s", response.statusCode(), response.body()));
         }
         return Utils.OBJECT_MAPPER.readValue(response.body(), Task.TYPE_REFERENCE);
     }
@@ -951,7 +1179,7 @@ public abstract class AbstractA2AServerTest {
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new RuntimeException(response.statusCode() + ": Deleting task failed!" + response.body());
+throw new RuntimeException(String.format("Ensuring queue failed! Status: %d, Body: %s", response.statusCode(), response.body()));
         }
     }
 
@@ -1020,6 +1248,36 @@ public abstract class AbstractA2AServerTest {
             return Integer.parseInt(body);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected void deletePushNotificationConfigInStore(String taskId, String configId) throws Exception {
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(("http://localhost:" + serverPort + "/test/task/" + taskId + "/config/" + configId)))
+                .DELETE()
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() != 200) {
+            throw new RuntimeException(response.statusCode() + ": Deleting task failed!" + response.body());
+        }
+    }
+
+    protected void savePushNotificationConfigInStore(String taskId, PushNotificationConfig notificationConfig) throws Exception {
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + serverPort + "/test/task/" + taskId))
+                .POST(HttpRequest.BodyPublishers.ofString(Utils.OBJECT_MAPPER.writeValueAsString(notificationConfig)))
+                .header("Content-Type", APPLICATION_JSON)
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() != 200) {
+            throw new RuntimeException(response.statusCode() + ": Creating task push notification config failed! " + response.body());
         }
     }
 

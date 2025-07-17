@@ -17,7 +17,7 @@ import java.util.UUID;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSONRPCRequest<TaskIdParams> {
+public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSONRPCRequest<GetTaskPushNotificationConfigParams> {
 
     /** The JSON-RPC method name for getting push notification configuration. */
     public static final String METHOD = "tasks/pushNotificationConfig/get";
@@ -34,7 +34,7 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
      */
     @JsonCreator
     public GetTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                                                @JsonProperty("method") String method, @JsonProperty("params") TaskIdParams params) {
+                                                @JsonProperty("method") String method, @JsonProperty("params") GetTaskPushNotificationConfigParams params) {
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
@@ -49,14 +49,7 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
         this.params = params;
     }
 
-    /**
-     * Creates a new GetTaskPushNotificationConfigRequest with simplified parameters.
-     * The JSON-RPC version defaults to "2.0" and the method is automatically set.
-     * 
-     * @param id the request identifier (string, number, or null)
-     * @param params the task parameters containing the task ID
-     */
-    public GetTaskPushNotificationConfigRequest(String id, TaskIdParams params) {
+    public GetTaskPushNotificationConfigRequest(String id, GetTaskPushNotificationConfigParams params) {
         this(null, id, METHOD, params);
     }
 
@@ -64,7 +57,7 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
         private String jsonrpc;
         private Object id;
         private String method;
-        private TaskIdParams params;
+        private GetTaskPushNotificationConfigParams params;
 
         public GetTaskPushNotificationConfigRequest.Builder jsonrpc(String jsonrpc) {
             this.jsonrpc = jsonrpc;
@@ -81,7 +74,7 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
             return this;
         }
 
-        public GetTaskPushNotificationConfigRequest.Builder params(TaskIdParams params) {
+        public GetTaskPushNotificationConfigRequest.Builder params(GetTaskPushNotificationConfigParams params) {
             this.params = params;
             return this;
         }

@@ -1,16 +1,18 @@
 package io.a2a.server.requesthandlers;
 
 import static io.a2a.server.util.async.AsyncUtils.createTubeConfig;
-
-import java.util.concurrent.Flow;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
+import java.util.List;
+import java.util.concurrent.Flow;
 
 import io.a2a.server.PublicAgentCard;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.DeleteTaskPushNotificationConfigRequest;
+import io.a2a.spec.DeleteTaskPushNotificationConfigResponse;
 import io.a2a.spec.EventKind;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
@@ -19,6 +21,9 @@ import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.ListTaskPushNotificationConfigRequest;
+import io.a2a.spec.ListTaskPushNotificationConfigResponse;
+import io.a2a.spec.PushNotificationNotSupportedError;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
@@ -113,7 +118,11 @@ public class JSONRPCHandler {
         }
     }
 
-    public GetTaskPushNotificationConfigResponse getPushNotification(GetTaskPushNotificationConfigRequest request) {
+    public GetTaskPushNotificationConfigResponse getPushNotificationConfig(GetTaskPushNotificationConfigRequest request) {
+        if (!agentCard.capabilities().pushNotifications()) {
+            return new GetTaskPushNotificationConfigResponse(request.getId(),
+                    new PushNotificationNotSupportedError());
+        }
         try {
             TaskPushNotificationConfig config = requestHandler.onGetTaskPushNotificationConfig(request.getParams());
             return new GetTaskPushNotificationConfigResponse(request.getId(), config);
@@ -124,10 +133,10 @@ public class JSONRPCHandler {
         }
     }
 
-    public SetTaskPushNotificationConfigResponse setPushNotification(SetTaskPushNotificationConfigRequest request) {
+    public SetTaskPushNotificationConfigResponse setPushNotificationConfig(SetTaskPushNotificationConfigRequest request) {
         if (!agentCard.capabilities().pushNotifications()) {
             return new SetTaskPushNotificationConfigResponse(request.getId(),
-                    new InvalidRequestError("Push notifications are not supported by the agent"));
+                    new PushNotificationNotSupportedError());
         }
         try {
             TaskPushNotificationConfig config = requestHandler.onSetTaskPushNotificationConfig(request.getParams());
@@ -147,6 +156,36 @@ public class JSONRPCHandler {
             return new GetTaskResponse(request.getId(), e);
         } catch (Throwable t) {
             return new GetTaskResponse(request.getId(), new InternalError(t.getMessage()));
+        }
+    }
+
+    public ListTaskPushNotificationConfigResponse listPushNotificationConfig(ListTaskPushNotificationConfigRequest request) {
+        if ( !agentCard.capabilities().pushNotifications()) {
+            return new ListTaskPushNotificationConfigResponse(request.getId(),
+                    new PushNotificationNotSupportedError());
+        }
+        try {
+            List<TaskPushNotificationConfig> pushNotificationConfigList = requestHandler.onListTaskPushNotificationConfig(request.getParams());
+            return new ListTaskPushNotificationConfigResponse(request.getId(), pushNotificationConfigList);
+        } catch (JSONRPCError e) {
+            return new ListTaskPushNotificationConfigResponse(request.getId(), e);
+        } catch (Throwable t) {
+            return new ListTaskPushNotificationConfigResponse(request.getId(), new InternalError(t.getMessage()));
+        }
+    }
+
+    public DeleteTaskPushNotificationConfigResponse deletePushNotificationConfig(DeleteTaskPushNotificationConfigRequest request) {
+        if ( !agentCard.capabilities().pushNotifications()) {
+            return new DeleteTaskPushNotificationConfigResponse(request.getId(),
+                    new PushNotificationNotSupportedError());
+        }
+        try {
+            requestHandler.onDeleteTaskPushNotificationConfig(request.getParams());
+            return new DeleteTaskPushNotificationConfigResponse(request.getId());
+        } catch (JSONRPCError e) {
+            return new DeleteTaskPushNotificationConfigResponse(request.getId(), e);
+        } catch (Throwable t) {
+            return new DeleteTaskPushNotificationConfigResponse(request.getId(), new InternalError(t.getMessage()));
         }
     }
 

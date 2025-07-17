@@ -46,12 +46,16 @@ public record PushNotificationConfig(String url, String token, PushNotificationA
         /** Unique identifier for this push notification configuration */
         private String id;
 
-        /**
-         * Sets the URL endpoint for push notification delivery.
-         * 
-         * @param url the endpoint URL for push notifications
-         * @return this builder instance for method chaining
-         */
+        public Builder() {
+        }
+
+        public Builder(PushNotificationConfig notificationConfig) {
+            this.url = notificationConfig.url;
+            this.token = notificationConfig.token;
+            this.authentication = notificationConfig.authentication;
+            this.id = notificationConfig.id;
+        }
+      
         public Builder url(String url) {
             this.url = url;
             return this;
