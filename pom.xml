@@ -6,7 +6,7 @@
 
     <groupId>io.github.a2asdk</groupId>
     <artifactId>a2a-java-sdk-parent</artifactId>
-    <version>0.2.5.Beta1-SNAPSHOT</version>
+    <version>0.2.6.Beta1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -62,6 +62,9 @@
 
         <!-- Redirect test output to file -->
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+
+        <!-- release properties -->
+        <release.auto.publish>false</release.auto.publish>
     </properties>
 
     <dependencyManagement>
@@ -206,6 +209,7 @@
                     <configuration>
                         <!-- This should point to a server entry in your settings.xml -->
                         <publishingServerId>central-a2asdk-temp</publishingServerId>
+                        <autoPublish>${release.auto.publish}</autoPublish>
                     </configuration>
                 </plugin>
                 <plugin>

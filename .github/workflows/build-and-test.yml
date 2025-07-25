@@ -4,6 +4,7 @@ on:
   # Handle all branches for now
   push:
   pull_request:
+  workflow_dispatch:
 
 # Only run the latest job
 concurrency:
