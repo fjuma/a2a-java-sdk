@@ -39,12 +39,21 @@ public class AgentExecutorProducer {
                 eventQueue.enqueueEvent(task);
             }
 
+            if (context.getMessage().getMessageId().startsWith("test-resubscribe-message-id")) {
+                int timeoutMs = Integer.parseInt(System.getenv().getOrDefault("RESUBSCRIBE_TIMEOUT_MS", "3000"));
+                System.out.println("====> task id starts with test-resubscribe-message-id, sleeping for " + timeoutMs + " ms");
+                try {
+                    Thread.sleep(timeoutMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             TaskUpdater updater = new TaskUpdater(context, eventQueue);
 
             // Immediately set to WORKING state
             updater.startWork();
             System.out.println("====> task set to WORKING, starting background execution");
-
+            
             // Method returns immediately - task continues in background
             System.out.println("====> execute() method returning immediately, task running in background");
         }
