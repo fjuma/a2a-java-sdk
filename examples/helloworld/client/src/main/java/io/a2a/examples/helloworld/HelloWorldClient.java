@@ -55,11 +55,10 @@ public class HelloWorldClient {
             System.out.println("Message sent with ID: " + response.getId());
             
             EventKind result = response.getResult();
-            if (result instanceof Message && result.getKind().equals(Message.MESSAGE)) {
-                Message responseMessage = (Message) result;
+            if (result instanceof Message responseMessage) {
                 StringBuilder textBuilder = new StringBuilder();
                 if (responseMessage.getParts() != null) {
-                    for (Part part : responseMessage.getParts()) {
+                    for (Part<?> part : responseMessage.getParts()) {
                         if (part instanceof TextPart textPart) {
                             textBuilder.append(textPart.getText());
                         }
