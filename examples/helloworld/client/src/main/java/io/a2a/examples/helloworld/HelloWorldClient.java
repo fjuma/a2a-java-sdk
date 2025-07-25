@@ -7,9 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.a2a.client.A2AClient;
 import io.a2a.A2A;
 import io.a2a.spec.AgentCard;
+import io.a2a.spec.EventKind;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.SendMessageResponse;
+import io.a2a.spec.Part;
+import io.a2a.spec.TextPart;
 
 /**
  * A simple example of using the A2A Java SDK to communicate with an A2A server.
@@ -50,7 +53,20 @@ public class HelloWorldClient {
                 .build();
             SendMessageResponse response = client.sendMessage(params);
             System.out.println("Message sent with ID: " + response.getId());
-            System.out.println("Response: " + response.toString());
+            
+            EventKind result = response.getResult();
+            if (result instanceof Message && result.getKind().equals(Message.MESSAGE)) {
+                Message responseMessage = (Message) result;
+                StringBuilder textBuilder = new StringBuilder();
+                if (responseMessage.getParts() != null) {
+                    for (Part part : responseMessage.getParts()) {
+                        if (part instanceof TextPart textPart) {
+                            textBuilder.append(textPart.getText());
+                        }
+                    }
+                }
+                System.out.println("Response: " + textBuilder.toString());
+            }
         } catch (Exception e) {
             System.err.println("An error occurred: " + e.getMessage());
             e.printStackTrace();
