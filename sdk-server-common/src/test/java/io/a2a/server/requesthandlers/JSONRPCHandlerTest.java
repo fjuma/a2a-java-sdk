@@ -8,40 +8,21 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
-import jakarta.enterprise.context.Dependent;
-
-import io.a2a.http.A2AHttpClient;
-import io.a2a.http.A2AHttpResponse;
 import io.a2a.server.ServerCallContext;
-import io.a2a.server.agentexecution.AgentExecutor;
-import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.auth.UnauthenticatedUser;
 import io.a2a.server.events.EventConsumer;
-import io.a2a.server.events.EventQueue;
-import io.a2a.server.events.InMemoryQueueManager;
-import io.a2a.server.tasks.BasePushNotificationSender;
-import io.a2a.server.tasks.InMemoryPushNotificationConfigStore;
-import io.a2a.server.tasks.InMemoryTaskStore;
-import io.a2a.server.tasks.PushNotificationConfigStore;
-import io.a2a.server.tasks.PushNotificationSender;
 import io.a2a.server.tasks.ResultAggregator;
-import io.a2a.server.tasks.TaskStore;
 import io.a2a.server.tasks.TaskUpdater;
-import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
@@ -57,7 +38,6 @@ import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.InvalidRequestError;
-import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.ListTaskPushNotificationConfigParams;
 import io.a2a.spec.ListTaskPushNotificationConfigRequest;
 import io.a2a.spec.ListTaskPushNotificationConfigResponse;
@@ -84,77 +64,15 @@ import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
-import io.a2a.util.Utils;
-import io.quarkus.arc.profile.IfBuildProfile;
 import mutiny.zero.ZeroPublisher;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 
-public class JSONRPCHandlerTest {
-
-    private static final AgentCard CARD = createAgentCard(true, true, true);
-
-    private static final Task MINIMAL_TASK = new Task.Builder()
-            .id("task-123")
-            .contextId("session-xyz")
-            .status(new TaskStatus(TaskState.SUBMITTED))
-            .build();
-
-    private static final Message MESSAGE = new Message.Builder()
-            .messageId("111")
-            .role(Message.Role.AGENT)
-            .parts(new TextPart("test message"))
-            .build();
-
-    AgentExecutor executor;
-    TaskStore taskStore;
-    RequestHandler requestHandler;
-    AgentExecutorMethod agentExecutorExecute;
-    AgentExecutorMethod agentExecutorCancel;
-    private InMemoryQueueManager queueManager;
-    private TestHttpClient httpClient;
-
-    private final Executor internalExecutor = Executors.newCachedThreadPool();
+public class JSONRPCHandlerTest extends AbstractA2ARequestHandlerTest {
 
     private final ServerCallContext callContext = new ServerCallContext(UnauthenticatedUser.INSTANCE, Map.of("foo", "bar"));
-
-
-    @BeforeEach
-    public void init() {
-        executor = new AgentExecutor() {
-            @Override
-            public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-                if (agentExecutorExecute != null) {
-                    agentExecutorExecute.invoke(context, eventQueue);
-                }
-            }
-
-            @Override
-            public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-                if (agentExecutorCancel != null) {
-                    agentExecutorCancel.invoke(context, eventQueue);
-                }
-            }
-        };
-
-        taskStore = new InMemoryTaskStore();
-        queueManager = new InMemoryQueueManager();
-        httpClient = new TestHttpClient();
-        PushNotificationConfigStore pushConfigStore = new InMemoryPushNotificationConfigStore();
-        PushNotificationSender pushSender = new BasePushNotificationSender(pushConfigStore, httpClient);
-
-        requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushConfigStore, pushSender, internalExecutor);
-    }
-
-    @AfterEach
-    public void cleanup() {
-        agentExecutorExecute = null;
-        agentExecutorCancel = null;
-    }
 
     @Test
     public void testOnGetTaskSuccess() throws Exception {
@@ -1436,92 +1354,4 @@ public class JSONRPCHandlerTest {
         assertInstanceOf(UnsupportedOperationError.class, deleteResponse.getError());
     }
 
-    private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
-        return new AgentCard.Builder()
-                .name("test-card")
-                .description("A test agent card")
-                .url("http://example.com")
-                .version("1.0")
-                .documentationUrl("http://example.com/docs")
-                .capabilities(new AgentCapabilities.Builder()
-                        .streaming(streaming)
-                        .pushNotifications(pushNotifications)
-                        .stateTransitionHistory(stateTransitionHistory)
-                        .build())
-                .defaultInputModes(new ArrayList<>())
-                .defaultOutputModes(new ArrayList<>())
-                .skills(new ArrayList<>())
-                .protocolVersion("0.2.5")
-                .build();
-    }
-
-    private interface AgentExecutorMethod {
-        void invoke(RequestContext context, EventQueue eventQueue) throws JSONRPCError;
-    }
-
-    @Dependent
-    @IfBuildProfile("test")
-    private static class TestHttpClient implements A2AHttpClient {
-        final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
-        volatile CountDownLatch latch;
-
-        @Override
-        public GetBuilder createGet() {
-            return null;
-        }
-
-        @Override
-        public PostBuilder createPost() {
-            return new TestPostBuilder();
-        }
-
-        class TestPostBuilder implements A2AHttpClient.PostBuilder {
-            private volatile String body;
-            @Override
-            public PostBuilder body(String body) {
-                this.body = body;
-                return this;
-            }
-
-            @Override
-            public A2AHttpResponse post() throws IOException, InterruptedException {
-                tasks.add(Utils.OBJECT_MAPPER.readValue(body, Task.TYPE_REFERENCE));
-                try {
-                    return new A2AHttpResponse() {
-                        @Override
-                        public int status() {
-                            return 200;
-                        }
-
-                        @Override
-                        public boolean success() {
-                            return true;
-                        }
-
-                        @Override
-                        public String body() {
-                            return "";
-                        }
-                    };
-                } finally {
-                    latch.countDown();
-                }
-            }
-
-            @Override
-            public CompletableFuture<Void> postAsyncSSE(Consumer<String> messageConsumer, Consumer<Throwable> errorConsumer, Runnable completeRunnable) throws IOException, InterruptedException {
-                return null;
-            }
-
-            @Override
-            public PostBuilder url(String s) {
-                return this;
-            }
-
-            @Override
-            public PostBuilder addHeader(String name, String value) {
-                return this;
-            }
-        }
-    }
 }
