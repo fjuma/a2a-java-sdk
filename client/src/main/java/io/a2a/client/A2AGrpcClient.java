@@ -71,10 +71,10 @@ public class A2AGrpcClient {
             } else if (response.hasTask()) {
                 return FromProto.task(response.getTask());
             } else {
-                throw new A2AServerException("Failed to send message: ");
+                throw new A2AServerException("Server response did not contain a message or task");
             }
         } catch (StatusRuntimeException e) {
-            throw new A2AServerException("Failed to send message: " + e, e.getCause());
+            throw new A2AServerException("Failed to send message: " + e, e);
         }
     }
 
@@ -95,7 +95,7 @@ public class A2AGrpcClient {
         try {
             return FromProto.task(blockingStub.getTask(getTaskRequest));
         } catch (StatusRuntimeException e) {
-            throw new A2AServerException("Failed to get task: " + e, e.getCause());
+            throw new A2AServerException("Failed to get task: " + e, e);
         }
     }
 
@@ -113,7 +113,7 @@ public class A2AGrpcClient {
         try {
             return FromProto.task(blockingStub.cancelTask(cancelTaskRequest));
         } catch (StatusRuntimeException e) {
-            throw new A2AServerException("Failed to cancel task: " + e, e.getCause());
+            throw new A2AServerException("Failed to cancel task: " + e, e);
         }
     }
 
@@ -125,13 +125,16 @@ public class A2AGrpcClient {
      * @throws A2AServerException if setting the push notification configuration fails for any reason
      */
     public TaskPushNotificationConfig setTaskPushNotificationConfig(TaskPushNotificationConfig taskPushNotificationConfig) throws A2AServerException {
+        String configId = taskPushNotificationConfig.pushNotificationConfig().id();
         CreateTaskPushNotificationConfigRequest request = CreateTaskPushNotificationConfigRequest.newBuilder()
+                .setParent("tasks/" + taskPushNotificationConfig.taskId())
                 .setConfig(ToProto.taskPushNotificationConfig(taskPushNotificationConfig))
+                .setConfigId(configId == null ? "" : configId)
                 .build();
         try {
             return FromProto.taskPushNotificationConfig(blockingStub.createTaskPushNotificationConfig(request));
         } catch (StatusRuntimeException e) {
-            throw new A2AServerException("Failed to set the task push notification config: " + e, e.getCause());
+            throw new A2AServerException("Failed to set the task push notification config: " + e, e);
         }
     }
 
@@ -149,7 +152,7 @@ public class A2AGrpcClient {
         try {
             return FromProto.taskPushNotificationConfig(blockingStub.getTaskPushNotificationConfig(getTaskPushNotificationConfigRequest));
         } catch (StatusRuntimeException e) {
-            throw new A2AServerException("Failed to get the task push notification config: " + e, e.getCause());
+            throw new A2AServerException("Failed to get the task push notification config: " + e, e);
         }
     }
 
@@ -168,7 +171,7 @@ public class A2AGrpcClient {
         try {
             asyncStub.sendStreamingMessage(request, streamObserver);
         } catch (StatusRuntimeException e) {
-            throw new A2AServerException("Failed to send streaming message: " + e, e.getCause());
+            throw new A2AServerException("Failed to send streaming message: " + e, e);
         }
     }
 
@@ -189,7 +192,7 @@ public class A2AGrpcClient {
         name.append("tasks/");
         name.append(getTaskPushNotificationConfigParams.id());
         if (getTaskPushNotificationConfigParams.pushNotificationConfigId() != null) {
-            name.append("pushNotification/");
+            name.append("/pushNotificationConfigs/");
             name.append(getTaskPushNotificationConfigParams.pushNotificationConfigId());
         }
         return name.toString();

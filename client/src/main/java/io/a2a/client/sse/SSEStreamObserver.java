@@ -24,17 +24,23 @@ public class SSEStreamObserver implements StreamObserver<StreamResponse> {
     @Override
     public void onNext(StreamResponse response) {
         StreamingEventKind event;
-        if (response.hasMsg()) {
-            event = FromProto.message(response.getMsg());
-        } else if (response.hasTask()) {
-            event = FromProto.task(response.getTask());
-        } else if (response.hasStatusUpdate()) {
-            event = FromProto.taskStatusUpdateEvent(response.getStatusUpdate());
-        } else if (response.hasArtifactUpdate()) {
-            event = FromProto.taskArtifactUpdateEvent(response.getArtifactUpdate());
-        } else {
-            log.warning("Invalid stream response " + response);
-            return;
+        switch (response.getPayloadCase()) {
+            case MSG:
+                event = FromProto.message(response.getMsg());
+                break;
+            case TASK:
+                event = FromProto.task(response.getTask());
+                break;
+            case STATUS_UPDATE:
+                event = FromProto.taskStatusUpdateEvent(response.getStatusUpdate());
+                break;
+            case ARTIFACT_UPDATE:
+                event = FromProto.taskArtifactUpdateEvent(response.getArtifactUpdate());
+                break;
+            default:
+                log.warning("Invalid stream response " + response.getPayloadCase());
+                errorHandler.accept(new IllegalStateException("Invalid stream response from server: " + response.getPayloadCase()));
+                return;
         }
         eventHandler.accept(event);
     }
