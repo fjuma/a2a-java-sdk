@@ -44,12 +44,15 @@ import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
+import io.a2a.spec.AuthenticatedExtendedCardNotConfiguredError;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.DeleteTaskPushNotificationConfigParams;
 import io.a2a.spec.DeleteTaskPushNotificationConfigRequest;
 import io.a2a.spec.DeleteTaskPushNotificationConfigResponse;
 import io.a2a.spec.Event;
+import io.a2a.spec.GetAuthenticatedExtendedCardRequest;
+import io.a2a.spec.GetAuthenticatedExtendedCardResponse;
 import io.a2a.spec.GetTaskPushNotificationConfigParams;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
@@ -1434,6 +1437,16 @@ public class JSONRPCHandlerTest {
         assertEquals("111", deleteResponse.getId());
         assertNull(deleteResponse.getResult());
         assertInstanceOf(UnsupportedOperationError.class, deleteResponse.getError());
+    }
+
+    @Test
+    public void testOnGetAuthenticatedExtendedAgentCard() throws Exception {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        GetAuthenticatedExtendedCardRequest request = new GetAuthenticatedExtendedCardRequest("1");
+        GetAuthenticatedExtendedCardResponse response = handler.onGetAuthenticatedExtendedCardRequest(request, callContext);
+        assertEquals(request.getId(), response.getId());
+        assertInstanceOf(AuthenticatedExtendedCardNotConfiguredError.class, response.getError());
+        assertNull(response.getResult());
     }
 
     private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
